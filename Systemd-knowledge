@@ -1,0 +1,123 @@
+System Boot process overview
+1 - BIOS check
+2 - The bootloader is loaded(typicaly GRUB) and executed, it search the first hdd for boot sector
+3 - The kernel is loaded in memory and takes over
+4 - Kernel loads the init disk (initramfs(sysV),initrd(systemd)) which contains the most needed system drivers and setup tools
+5 - The kernel hands control over the system to the initialization process (/sbin/init)
+6 - Init performs some system maintenance tasks from /etc/rc.d/rc.sysinit
+7 - Init reads /etc/inittab and enters the runlevel specified
+
+
+SysVinit overview 
+
+Init scripts location
+RedHat based: /etc/rc.d/
+Debian based: /etc/init.d/
+
+rc.local - can be modified to include extra tasks on boot
+/sbin/init - initialization process that is started by the kernel after it is loaded in memory
+/etc/inittab - the file which init is checking to determine the run level
+<identifier>:<runlevel>:<action>:<process>
+id:3:initdefault                          (sample)
+si::sysinit:/etc/rc.d/rc.sysinit           -- start up script
+l0:0:wait:/etc/rc.d/rc 0
+l1:1:wait:/etc/rc.d/rc 1
+
+Traditional init would bring up each file system listed in /etc/fstab one at a time and fsck is run on each one
+All file systems would have to be mounted before a service could be started
+
+
+Systemd overview
+
+Wtih systemd everything that happends on a system is logged
+the systemd journall collects all information , including data not logged in traditional syslog
+There is no dependancies on starting daemons as systemd creates and manages all sockets needed.
+
+The kernel manages all processes in hierarchal manner and collects them in control groups, each
+cgroup can have its resources limited such as RAM,CPU,etc.
+The resources that are available for any given cgroup can be called slices(group of services on the system)
+They can be found in /sys/fs/cgroup/systemd
+
+Systemd manages processes through scopes
+scopes are set of processes that are started by other processes and they register with systemd for managment
+
+Primary slice groups
+system.slice - contains the system services that are running on a system, along with systemd's own services
+user.slice - user specific services that are running, such as desktop session.Each user logged into the system
+gets their own slice
+
+Systemd file system mounting - it uses autofs utility which mounts file systems only when they are needed
+
+
+systemd-cgls  -  utility to show the breakdown of all of the processes and how the system's resources are split
+systemd-cgtop - show top resource usage based on cgroup
+systemctl list-unit-files  - list all installed unit files
+systemd-run --unit=name --scope --slice=slice_name command  -- to run a command in specified cgroup
+#--machine   executes the command in a confined container (build into systemd)
+systemctl -t slice  -- list existing slices
+systemctl set-property name parameter=value  -- persistently change resource control settings during the application runtime.
+#CPUShares=value - The default value is 1024. By increasing the number, you assign more CPU time to the unit.
+#MemoryLimit=value  -- Use suffixes K, M, G
+Reference for more limits
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/resource_management_guide/sec-Modifying_Control_Groups#sec-Modifying_Unit_Files
+systemctl cat httpd.service   --  to cat the unit file for httpd
+systemctl get-default
+systemctl set-default target.target
+systemctl is-active service.service
+
+Timer service can be created , the name should be the same as the service file
+
+#Selinux must be disabled/permissive
+# For Debian dbus must be installed, /etc/securetty must be removed/renamed
+
+systemd-nspawn -M cont-name - built in container manager for systemd
+systemd-nspwan -D /var/lib/machines/cont-name - to start the container
+#--private-network local/loopback interface only
+#--network-veth   -- shared virtual Ethernet interface between cont and guest
+#--network-bridge INTERFACE -- for a bridged connection
+#--network-interface INT    -- to specify interface for a container (can not be used by the host)
+systemctl enable systemd-nspawn@cont-name - enable installed container
+
+machinectl enable cont-name - to enable a container
+machinectl start cont-name
+#list  - list all conts
+#login - login to running cont
+#status
+#remove
+
+
+Build a system container overview
+place a OS tree inside /var/lib/machines/container-name
+Intall packages inside a container
+yum -y --releasever=7 --installroot=/var/lib/machines/cont-name install systemd passwd yum vim-minimal redhat-release
+Spawn the container
+systemd-nspwan -D /var/lib/machines/cont-name
+Change password for root
+mv /etc/securetty /etc/securetty.disabled
+to exit CTRL+] 3 times
+enable it so you can manage it with machinectl
+systemctl enable systemd-nspawn@cont-name
+
+systemd journal - binary log file that collects all system messages
+primary configuration file
+/etc/systemd/journald.conf
+storage options:
+auto - (default) will store data to /var/log/journal (if exists) and to /run/log/journal
+persistent - data is stored to /var/log/journal hierarchy
+volatile - data is only sent to /run/log/journal (in memory)
+none - no data is kept
+
+To permanently keep the journal
+1 - mkdir /var/log/journal
+2 - systemd-tmpfiles --create --prefix /var/log/journal
+
+journalctl
+# -r   shows newest entries first
+# -e   jumps to the end of the page
+# -n   only the most recent entries and limits the amount of lines specified
+# -f   follows the journal as new entries are created (tail -f)
+# -u   only the entries for the unit specified
+# -o verbose/json-pretty    formats the output
+# -k   shows only kernel messages (dmesg)
+systemd-cat - send custom output to the journal
+# echo "some text" | systemd-cat 
