@@ -1,0 +1,249 @@
+Reference
+https://aws.amazon.com/whitepapers/
+
+
+Services overview
+StorageGateway   - Connect local storage apliance to AWS storage
+  gateway-cached volumes - create aws storage volumes and mount them as ISCSI devices on the on-premise location
+  gateway-stored volumes - store all data locally, gateway will take regular snapshots for backups
+EFS              - Elastic file system (NFS)
+CloudFront       - CDN (Edge locations)
+DirectConnect    - Dedicated Line from data center to AWS
+ElasticCache     - Caching system (memcached,redis)
+RedShift         - petabyte-scale data warehousing service (used for big data analytics)
+SWF              - Simple WorkFlow
+SQS              - Simple Query Service
+CloudWatch       - Monitoring
+CloudTrail       - Account and API calls log
+FlowLogs         - VPC Network flow logs simillar to NetFlow on cisco devices
+CloudFormation   - Deployment service (export/import infrastructure as JSON template)
+ElasticBeanstalk - Deployment of less complex (single-tier) applications (simple environments)
+Kinesis          - real-time data processing service (development service), real-time dashboards
+  producers  -  devices that produce real-time data for analyzation
+  consumers  -  devices that collect this data and process it
+  shards     -  compute power (the more data you need to process , the more shards you add to kinesis stream)
+                each shard can process 2MB of data per second , and 1 MB of write data per second
+EMR              - elastic map reduce ,deploys EC2 instances based off of the hadoop big data framework 
+				   used to process vast amounts of data (clusters with master and slave nodes)
+				   HDFS - hadoop distributed file system (cluster fs)
+OpsWorks         - Create stack of AWS resources and manage them into layers (chef recipes)				   
+				   (automate,manage, maintain deployments)
+  stack  -  set of resources to be managed as a group
+  layers -  used to configure and represent components of a stack				  
+AWS Endpoints    - allows for a private connection to AWS without going to internet
+				endpoints are virtual devices, 2 types of endpoints (interface, gateway[for RDS,DynamoDB])
+AWS config       - detailed view of configuration of AWS resources (evaluate resource config for desired settings)
+AWS inspector    - Security audit of AWS resources
+AWS systems manager - manage , run scripts, install updates on group of resources.
+				   
+Tools for checking the available bandwith and speed
+yum install iperf iperf3      # from the epel repo
+
+#server
+iperf3 -s -p 80
+# client which is testing
+iperf3 -c server-IP -i 1 -t 10 -p 80
+
+#-c connection
+#-i interval
+#-t times
+
+
+Services Information
+
+IAM:
+(Identity and Access Managment) it is used to manage all your AWS users,groups, policies, roles and access
+to AWS resources
+By default any new user do not have access to any services
+
+VPC:
+(Virtual Private Cloud) Private subsection of AWS that you control, in which you can place AWS resources.
+You can control 
+subnets - Logical separation of the networks of your vpc (Must be associated with route table, ONly 1 NACL per subnet)
+routing tables - contains set of routes that define how traffic is handled (you can have multiple per vpc)
+NACLs - Network ACL , Inbound and outbound rules, evaluate rules based on number, Supports allow rules and deny rules
+Is stateless: Return traffic must be explicitly allowed by rules
+Internet Gateways - VPC component that allows your VPC to connect to internet (one per vpc)
+
+S3:
+(Simple Storage Service) Online bulk storage service
+Buckets - root level Folders, names must be unique accross all of AWS
+objects - file stored in a bucket
+Storage class - standart, reduced redundancy, infrequent access, Glacier
+Lifecycles can be configured for objects.
+Versioning - let you keep different versions of single object
+
+EC2:
+(Elastic Cloud Compute), Can be bootstraped with script or commands on provisioning 
+Basic VPS in the cloud, 3 types:
+On-demand, Reserverd, Spot
+AMI - (Amazon Machine Image) image from which your ec2 will be created , you can create your own from running instances or snapshots
+Instance Type - Type of the instance configuration (CPU, Memory, Network)
+EBS - (Elastic Block storage) ISCSI storage option for AWS EC2 servers , different IOPS depending on the size
+Snapshots - image of EBS (or other disk) used to backup the state of the disk, to restore a snapshot you must create ebs volume from it
+Security Groups - Host based firwall for the instance, Supports allow rules only, Is stateful: Return traffic is automatically allowed, regardless of any rules
+
+Databases:
+RDS - Relational database service
+Sql options include:
+Amazon Aurora, mysql, mariadb, postgresql, oracle, Microsoft SQL server
+To provision them in private subnets create subnet group with at least two private subnets.
+
+DynamoDB - NoSQL database service
+Nosql options are:
+MongoDB, Cassandra DB, Oracle Nosql
+
+SNS
+(Simple notifications service)
+Topics - how you label and group different endpoints that you send messages to
+Subscriptions - The endpoints that topic send messages to (example: mail address of sys admin)
+Publishers - Human/alarm/event that gives SNS the message that needs to be sent
+
+Auto Scaling
+Launch Configuration - EC2 Template used when auto scaling needs to add additional servers to the group
+Auto Scaling Group - All the rules and settings that govern when a EC2 server is auto added or removed
+
+
+Different Examples
+				   
+Aplication Load balancer
+
+1 - Create target groups for the different ec2 instances 
+  set name, protocol and port
+  associate ec2 instances to the target groups (target group > register > edit)
+  
+2 - Create the load balancer
+  set name , internet facing , port ,subnets
+  attach one of the target groups
+  
+3 - Edit load balancer rules 
+  insert new rule and choose path , provide the http header search pattern (*pictures*)
+  insert second rule for other target group similarly (*videos*)
+  
+  
+VPC secure setup with EC2 private instances and NAT gateway
+ 
+  bastion host - EC2 instance that is in public subnet, and it is used as a gateway for trafic to private
+  ec2 instances
+  nat gateway - provide private ec2 instances with route to internet for software install and updates
+  prevents any hosts outside of the private network to initiate connections with private EC2s
+  - it must be created in public subnet
+  - it must be part of the private subnet route table
+ 
+1 - Create VPC (it will span in 2 availability zones)
+
+2 - create 2 subnets per availability zone (they will be public and private)
+
+3 - create 2 route tables , one public facing and one private
+  Associate the coresponding subnets with the proper route tables (public to public, private to private)
+  
+4 - Create NAT gateway
+  place it in public subnet and associate elastic IP address
+  edit the private route table and include the nat gateway as route.
+
+5 - Create ELB in order for the private instances to server traffic (optional)
+  choose classic elb and attach both public subnets only
+  select the private ec2 instances
+    
+  
+Cross-Origin Resource Sharing (CORS)
+  method to allow a web application hosted in S3 bucket to request and access resources in another
+  bucket.
+  It is enabled per bucket.
+  
+  
+VPC peering 
+
+ 1 - Create VPC for peering
+   (Make sure that there will be no CIDR conflicts with the existing VPC , you need two different ranges)
+
+ 2 - Create VPC peering connection
+
+ 3 - Create new route table for the second VPC with which you want to peer.
+    modify both route tables (new one and original one) and include route to the peering connection
+	through the vpc peering gateway
+	
+
+RDS database with backup solutions (replication and snapshots)
+
+ 1 - Create subnet group for the database replication
+   (RDS section > subnet groups) and add subnets that you want to associate with this group
+   
+ 2 - Create your RDS instance
+ 
+ 3 - Create the read replica (RDS > actions > create read replica)
+   
+ 4 - Optional - Promote the read replica to master
+ 
+
+Install custom monitoring scripts for CloudWatch
+
+ 1 - Create role for EC2 instance to access CloudWatch (Or user with access keys stored in awscreds.template)
+
+ 2 - download: perl-Switch, perl-DateTime, perl-Sys-Syslog, perl-LWP-Protocol-https
+
+ 3 - download the amazon perl monitoring scripts
+     curl http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip -O
+
+ 4 - put perl script used to put data to cloudwatch
+     get perl script used to get data from cloudwatch
+     Argument for put script
+     ./mon-put-instance-data.pl
+     --mem-util
+     --mem-used
+     --swap-util
+     --swap-used
+     --disk-space-util
+     --disk-space-used
+     --disk-space-avail
+     --memory-units=megabytes
+     --disk-space-units=gigabytes
+     --disk-path=/dev/xvda1
+
+
+To initialize storage block that was restored from snapshot dd command can be used (or fio which is not installed by default)
+dd if=/dev/xvdf of=/dev/null bs=1M
+
+
+Resizing or changing EBS root volume
+
+ 1 - find the vlume id that you want to resize
+     (take a snapshot to backup the volume)
+	 
+ 2 - increase the volume size or make new volume from the snapshot created
+ 
+ 3 - modify the partition and extend it
+   growpart /dev/xvda 1
+   
+ 4 - extend the filesystem
+   For a Linux ext2, ext3, or ext4 file system
+   resize2fs /dev/xvda1
+   For xfs file systems  , XFS file systems must be mounted to resize them
+   yum install xfsprogs   
+   xfs_growfs -d /
+  
+	
+   file system checks
+   for ext3 and ext4
+   e2fsck -f /dev/xvda1
+   for xfs 
+   xfs_repair /dev/xvda1
+   
+
+Systems manager
+
+system manager relies on groups (tags)
+
+1 - create a role for ec2 systems manager
+  
+2 - asign the role to the instances that you want managed
+
+3 - System manager can be found under Resource managment tab
+  
+  
+Backup procedure for EBS volumes
+
+New volume can be created from a bakcup snapshot if you want a partial backup restored,
+new vilume can be created and then mounted on the EC2 instance where you can copy the needed information
+
+Whole EC2 servers can be backud up by creating an AMI from them.
