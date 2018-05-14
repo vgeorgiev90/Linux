@@ -1,0 +1,148 @@
+Linux Security and server hardening
+
+PSACCT AND ACCT TOOLS
+psacct and acct are tools to track user activities on the system. If your system is accessed by multiple users, then these tools will help you to track user access time for the system, 
+which command they are performing
+
+Install:
+yum install psacct
+apt-get install acct
+
+Usage:
+ac -d   -- The command below will print user login time hourly with each day
+ac user -- check per user
+sa -u   -- all the commands executed by users
+
+
+LYNIS
+Lynis is open source auditing tool. 
+Linux/Unix administrators use it to evaluate current system security.
+
+Install:
+yum install lynis
+apt-get install lynis
+
+Usage:
+lynis audit system
+
+
+OSSEC HIDS
+OSSEC watches it all, actively monitoring all aspects of 
+Unix system activity with file integrity monitoring, log monitoring, rootcheck, and process monitoring. 
+
+Install
+http://ossec-docs.readthedocs.io/en/latest/manual/installation/
+
+Usage:
+Ossec usage can be very complex , the product is highly configurable , read the documentation
+
+
+LINUX KERNEL SECURITY HARDENING
+By using system control interface, we can change the settings of the kernel. 
+You can use sysctl command or edit the “/etc/sysctl.conf” file.
+
+# Avoid a smurf attack
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Turn on protection for bad icmp error messages
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+# Turn on syncookies for SYN flood attack protection
+net.ipv4.tcp_syncookies = 1
+
+# Turn on and log spoofed, source routed, and redirect packets
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# No source routed packets here
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+
+# Turn on reverse path filtering
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Make sure no one can alter the routing tables
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.secure_redirects = 0
+
+# Don't act as a router
+net.ipv4.ip_forward = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Turn on execshield for reducing worm or other automated remote attacks 
+kernel.exec-shield = 1
+kernel.randomize_va_space = 1
+
+# Increase system file descriptor limit    
+fs.file-max = 65535
+
+# Allow for more PIDs (Prevention of fork() failure error message) 
+kernel.pid_max = 65536
+
+# Increase system IP port limits
+net.ipv4.ip_local_port_range = 2000 65000
+
+# Tuning Linux network stack to increase TCP buffer size. Set the max OS send buffer size (wmem) and receive buffer size (rmem) to 12 MB for queues on all protocols.
+net.core.rmem_max = 8388608
+net.core.wmem_max = 8388608
+
+# set minimum size, initial size and max size
+net.ipv4.tcp_rmem = 10240 87380 12582912
+net.ipv4.tcp_wmem = 10240 87380 12582912 
+
+# Value to set for queue on the INPUT side when incoming packets are faster then the kernel process on them. 
+net.core.netdev_max_backlog = 5000
+
+# For increasing transfer window, enable window scaling
+net.ipv4.tcp_window_scaling = 1
+
+
+LINUX AUDITD
+During startup, the rules in /etc/audit.rules are read by this daemon. 
+You can open /etc/audit.rules file and make changes such as setup audit file log location and other option. 
+The default file is good enough to get started with auditd.
+
+auditctl – a command to assist controlling the kernel`s audit system. 
+You can get status, and add or delete rules into kernel audit system. 
+Setting a watch on a file is accomplished using this command
+
+ausearch – a command that can query the audit daemon logs based for events based on different search criteria.
+aureport – a tool that produces summary reports of the audit system logs.
+
+Let us say you would like to audit a /etc/passwd file. 
+You need to type command as follows:
+auditctl -w /etc/passwd -p war -k password-file
+
+#-w /etc/passwd : Insert a watch for the file system object at given path i.e. watch file called /etc/passwd
+#-p war : Set permissions filter for a file system watch. It can be r for read, w for write, x for execute, a for append.
+#-k password-file : Set a filter key on a /etc/passwd file (watch).
+#You need to use password-file string or phrase while searching audit logs.
+
+
+SECURE SHARED MEMORY
+Shared memory can be used in an attack against a running service, so it is always best to secure that portion of memory. 
+You can do this by modifying the /etc/fstab file.
+add the following line to the bottom of that file:
+
+tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0
+#noexec – Do not set execution of any binaries on this partition
+#nodev – Do not allow character or special devices on this partition
+#nosuid – Do not set SUID/SGID access on this partition
+#Optional implement disk quotas
+
+PREVENT IP SPOOFING
+Edit the /etc/host.conf file and include the following
+# The "order" line is only used by old versions of the C library.
+​order bind,hosts
+​nospoof on
+
+
+Make Sure No Non-Root Accounts Have UID Set To 0
+awk -F: '($3 == "0") {print}' /etc/passwd
+Disable Unwanted SUID and SGID Binaries
+find / -perm +4000   # SUID
+find / -perm +2000   # SGID
