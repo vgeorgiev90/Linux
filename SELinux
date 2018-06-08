@@ -1,0 +1,194 @@
+############### Security Enchanced Linux ##################
+
+Selinux defines a set of rules that determine what process can access
+specific files and locations
+Context is assigned to every process, directory and port which is used 
+to determine if a process can access that specific resource
+In selinux you can work with contexts and booleans
+
+Terminology
+
+Users
+SELinux has a set of pre-built users. 
+Every regular Linux user account is mapped to one or more SELinux users.
+In the SELinux world, a process (a daemon or a running program) is called a subject.
+
+Roles
+A role is like a gateway that sits between a user and a process. 
+A role defines which users can access that process. 
+Roles are not like groups, but more like filters: 
+a user may enter or assume a role at any time provided the role grants it. 
+The definition of a role in SELinux policy defines which users have access to that role. 
+It also defines what process domains the role itself has access to. 
+Roles come into play because part of SELinux implements what's known as Role Based Access Control (RBAC).
+
+Subjects and Objects
+A subject is a process and can potentially affect an object.
+An object in SELinux is anything that can be acted upon. This can be a file, a directory, a port, a tcp socket, the cursor, or perhaps an X server. 
+The actions that a subject can perform on an object are the subject's permissions.
+
+Domains
+A domain is the context within which an SELinux subject (process) can run. That context is like a wrapper around the subject. 
+It tells the process what it can and can't do.
+For example, the domain will define what files, directories, links, devices, or ports are accessible to the subject.
+
+Types
+A type is the context for a file's context that stipulates the file's purpose. 
+For example, the context of a file may dictate that it's a web page, 
+or that the file belongs to the /etc directory, or that the file's owner is a specific SELinux user.
+
+SELinux policy
+SELinux policy defines user access to roles, role access to domains, and domain access to types. 
+First the user has to be authorized to enter a role, and then the role has to be authorized to access the domain. 
+The domain in turn is restricted to access only certain types of files.
+
+SE User    ==>       SE Role             ==>    SE Domain    ==>    File
+                        |                           |
+                Determines what users         Determines what roles
+                are authorized                  are authorized
+                                              to access files,ports,etc
+
+
+When an SELinux-enabled system starts, the policy is loaded into memory. 
+SELinux policy comes in modular format, much like the kernel modules loaded at boot time. 
+And just like the kernel modules, they can be dynamically added and removed from memory at run time.
+
+semodule -l 
+#command lists the SELinux policy modules currently loaded into memory.
+#it can be used for a number other tasks like installing, 
+#removing, reloading, upgrading, enabling and disabling SELinux policy modules.
+
+The policy files have a .pp extension location is
+/etc/selinux/targeted/modules/active/modules/
+
+#To check all sebooleans
+semanage boolean -l
+
+#to change selinux boolean
+setsebool ftpd_anon_write on
+
+#to add port context to a process (so it can use the port)
+semanage port -a 6543 -p tcp -t ssh_port_t
+
+
+Everything in a Linux system can have a security context: 
+a user account, a file, a directory, a daemon, or a port can all have their security contexts. 
+However, security context will mean different things for different types of objects.
+
+SELinux file contexts
+ls -Z /etc/*.conf
+
+-rw-r--r--. root root system_u:object_r:locale_t:s0    /etc/locale.conf
+-rw-r--r--. root root system_u:object_r:etc_t:s0       /etc/logrotate.conf
+-rw-r--r--. root root system_u:object_r:etc_t:s0       /etc/man_db.conf
+
+The security context is this part:
+system_u:object_r:etc_t:s0
+
+
+There are four parts and each part of the security context is separated by a colon (:). 
+The first part is the SELinux user context for the file.
+Each Linux user account maps to an SELinux user, and in this case, 
+the root user that owns the file is mapped to the system_u SELinux user.
+
+The second part specifies the SELinux role, which is object_r
+
+What's most important here is the third part, the type of the file that's listed here as etc_t. 
+This is the part that defines what type the file or directory belongs to.
+
+The fourth part of the security context, s0, has to do with multilevel security or MLS. 
+Basically this is another way of enforcing SELinux security policy, and this part shows the sensitivity of the resource (s0)
+
+SELinux Users are suffixed by "_u", roles are suffixed by "_r" and types (for files) or domains (for processes) are suffixed by "_t".
+
+Structure of Selinux statements for policy
+
+allow <domain> <type>:<class> { <permissions> };
+
+To check the type of access allowed for a process you can use (part of setools-console package)
+
+sesearch --allow --source httpd_t --target httpd_sys_content_t --class file
+Found 4 semantic av rules:
+   allow httpd_t httpd_sys_content_t : file { ioctl read getattr lock open } ;
+   allow httpd_t httpd_content_type : file { ioctl read getattr lock open } ;
+   
+This says that the httpd daemon (the Apache web server) has I/O control, 
+read, get attribute, lock, and open access to files of the httpd_sys_content type.
+
+#To change a context for a file (temporary)
+chcon --type var_t /var/www/html/index.html
+
+#SELinux "remembers" the context of every file or directory in the server in
+#/etc/selinux/targeted/contexts/files/file_contexts
+#To restore the original context
+restorecon -v /var/www/html/index.html
+#-R autorelabel
+
+To permanently change the context of file/directory
+1 - semanage fcontext --add --type httpd_sys_content_t "/www(/.*)?"
+2 - restorecon -Rv /www
+
+SELinux enforces something we can term as "context inheritance". 
+What this means is that unless specified by the policy, processes and files are created with the contexts of their parents.
+
+Domain Transition - how processes access other processes.
+let's say you have a process called proc_a running within a context of contexta_t. 
+With domain transition, proc_a can run an application (a program or an executable script) called app_x that would spawn another process. 
+This new process could be called proc_b and it could be running within the contextb_t domain. 
+So effectively, contexta_t is transitioning to contextb_t through app_x. 
+The app_x executable is working as an entrypoint to contextb_t.
+
+SELinux Users
+SELinux users are defined in the policy that's loaded into memory at boot time, and there are only a few of these users.
+Different SELinux users have different rights in the system and that's what makes them useful.
+When SELinux is enforced, each regular Linux user account is mapped to an SELinux user account.
+To view this mapping, we can run the semanage login -l command
+
+Any regular Linux user account is first mapped to the default login.
+
+To see what SELinux users are available in the system, we can run the semanage user -l
+
+guest_u: This user doesn't have access to X-Window system (GUI) or networking and can't execute su / sudo command.
+xguest_u: This user has access to GUI tools and networking is available via Firefox browser.
+user_u: This user has more access than the guest accounts (GUI and networking), but can't switch users by running su or sudo.
+staff_u: Same rights as user_u, except it can execute sudo command to have root privileges.
+system_u: This user is meant for running system services and not to be mapped to regular user accounts
+
+
+#Check what domain/role SEuser has access to
+seinfo -uuser_u -x
+seinfo -ruser_u -x
+
+Example1: Restrict joe user for su and sudo
+
+semanage login -a -s user_u regularuser
+#We are adding (-a) the regularuser account to the SELinux (-s) user account user_u.
+
+Example2: Restrict permissions to run scripts
+#By default, SELinux allows users mapped to the guest_t account to execute scripts from their home directories.
+
+getsebool allow_guest_exec_content
+
+#let's first change the SELinux user mapping for the guestuser account
+
+semanage login -a -s guest_u joe
+
+#change the boolean setting allow_guest_exec_content to off
+
+setsebool allow_guest_exec_content off
+
+Example3: Restrict access to services
+#Roles become important when dealing with users and processes.
+
+#map the joe user to the SELinux user_u account.
+
+semanage login -a -s user_u joe
+
+
+#Selinux logs
+/var/log/audit/audit.log
+/var/log/messages
+
+
+Reference:
+https://www.digitalocean.com/community/tutorial_series/an-introduction-to-selinux-on-centos-7
