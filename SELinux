@@ -66,9 +66,14 @@ semanage boolean -l
 
 #to change selinux boolean
 setsebool ftpd_anon_write on
+#-P for persistent changes
+
 
 #to add port context to a process (so it can use the port)
 semanage port -a 6543 -p tcp -t ssh_port_t
+
+#For troubleshooting Selinux
+yum install setroubleshoot-server
 
 
 Everything in a Linux system can have a security context: 
@@ -124,9 +129,15 @@ chcon --type var_t /var/www/html/index.html
 restorecon -v /var/www/html/index.html
 #-R autorelabel
 
+#check file contexts
+semanage fcontext -l
+
 To permanently change the context of file/directory
 1 - semanage fcontext --add --type httpd_sys_content_t "/www(/.*)?"
 2 - restorecon -Rv /www
+
+#To delete the context
+semanage fcontexst -d '/apache(/.*)?'
 
 SELinux enforces something we can term as "context inheritance". 
 What this means is that unless specified by the policy, processes and files are created with the contexts of their parents.
