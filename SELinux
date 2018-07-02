@@ -207,7 +207,8 @@ grep nginx /var/log/audit/audit.log | audit2allow -m nginx   -  to check
 # -M nginx to generate
 # to load the policy
 semodule -i nginx.pp
-
+# to enable the policy
+semodule --enable nginx
 
 
 Reference:
