@@ -201,5 +201,14 @@ semanage login -a -s user_u joe
 /var/log/messages
 
 
+### To generate(allow) policy for service
+##example
+grep nginx /var/log/audit/audit.log | audit2allow -m nginx   -  to check
+# -M nginx to generate
+# to load the policy
+semodule -i nginx.pp
+
+
+
 Reference:
 https://www.digitalocean.com/community/tutorial_series/an-introduction-to-selinux-on-centos-7
