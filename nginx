@@ -1,0 +1,250 @@
+################ NginX ##################
+
+For installation of the latest stable packages get the nginx repo
+
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+gpgcheck=0
+enabled=1
+
+#change OS and OSRELEASE with your system
+
+############## Nginx config file ##############
+
+worker_processes - set how many worker processes will be listening
+
+events - configure how connections are handled
+#worker_connections 1024;  - it means that every worker process can have up to 1024 concurent connections
+
+http - specifies the httpd connection handling for nginx (it can manage more than httpd)
+
+
+############## nginx virtual hosts #############
+
+server {
+    listen 80 default_server;                          ## if no server name matches are found use this as default
+    listen 443 ssl;                                    ## listen for SSL traffic
+    server_name example.com;                           ## Server name for which to answer
+
+    root /home/viktor/html;                            ## dont forget to change selinux context
+	error_page 404.html /home/viktor/html/404.html;    ## Custom error pages
+	
+	#Basic auth	
+	location = /admin.html {
+       auth_basic "You are not getting here..";           ## message to be displayed
+       auth_basic_user_file /home/viktor/auth/.htpasswd;  ## file containing credentials
+    }	
+
+    #SSL config part	
+	ssl_certificate /path/to/public/cert;
+	ssl_certificate_key /path/to/private/kry;
+	
+	## rewrite rules
+	rewrite ^(/.*)\.html(\?.*)?$ $1$2 redirect;
+	rewrite ^/(.*)/$ /$1 redirect;
+	location / {
+	   try_files $uri/index.html $uri.html $uri/ $uri =404;
+	}
+}
+
+## Redirect http to https
+server {
+   listen 80;
+   server_name example.com;
+   return 301 https://$host$request_uri;
+}
+
+### # Overview of NGINX modules
+example mod_security module inclussion
+
+yum groupinstall 'Development tools'
+yum install -y geoip-devel libcurl-devel libxml2-devel libxslt-devel libgb-devel lmdb-devel openssl-devel pcre-devel perl-ExtUtils-Embed yajl-devel zlib-devel
+
+
+get the modsecurity source code
+git submodule init
+git submodule update
+./build.sh
+./configure
+make && make install
+
+get nginx source code
+./configure --with-compat --add-dynamic-module=../ModSecurity-nginx
+make modules
+cp ngx_http_modsecurity_module.so /etc/nginx/modules
+
+in the nginx.config
+
+load_module /etc/nginx/modules/ngx_http_modsecurity_module.so;
+
+copy modsecurity.conf-recommended to nginx directory
+
+#change the log option in mod sec conf to prevent selinux issues
+SecAuditLog /var/log/nginx/modsec_audit.log
+
+#add this to the vhost file
+modsecurity on;
+modsecurity_rules_file /etc/nginx/modsecurity/modsecurity.conf;
+
+
+############# Reverse proxy config ############
+
+server {
+   listen 80;
+   server_name example.com;
+   
+   location / {
+      proxy_pass http://127.0.0.1:3000;
+	  proxy_http_version 1.1;
+	  proxy_set_header X-Forwarder-For $proxy_add_x_forwarder_for;    ### modify request headers to check the IP of the client
+      proxy_set_header X-Real-IP $remote_addr;
+   }
+}
+
+
+############# Lemp stack with nginx ###############
+
+yum install centos-release-scl 
+
+yum install rh-php71-php rh-php71-php-fpm rh-php71-php-mysqlnd
+
+##modify the php-fpm www.conf file to listen on unix socket and user to nginx
+##install mariadb , wordpress 
+
+######## vhost config with fastcgi_pass ####
+######## Caching for static content ########
+
+fastcgi_cache_path /var/cache/nginx/blog levels=1:2
+                   keys_zone=blog:10m max_size=1g inactive=60m;
+server {
+   listen 80;
+   server_name example.com;
+   root /var/www/html/wordpress;
+   index index.php;
+   
+   ### Caching content
+   fastcgi_cache_key $scheme$request_method$host$request_uri;
+   
+   #### set custom variables to skip cache/nginx/blog
+   
+   set $skip_cache 0;
+   
+   if ($request_uri ~* "/wp-admin") {
+      set $skip_cache 1;
+   }
+   
+   location / {
+      try_files $uri $uri/ /index.php?$args;
+   }
+
+   location ~ \.php$ {
+      fastcgi_index index.php;
+      fastcgi_pass unix:/var/run/php-fpm.sock;
+	
+      fastcgi_cache_bypass $skip_cache;
+	  fastcgi_no_cache $skip_cache;
+	
+	  ## caching static content
+	  fastcgi_cache blog;
+	  fastcgi_cache_valid 60m;
+	  
+	  include fastcgi_params;
+	  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+   }
+}
+
+
+######### Vhost for uWSGI python app with microcaching #########
+uwsgi_cache_path /var/cache/nginx/microcaching levels=1:2
+                 keys_zone=micro:10m max_size=1g;
+
+server {
+   listen 80;
+   server_name notes.example.com;
+   
+   uwsgi_cache_key $scheme$request_method$host$request_uri;
+   
+   location /static {
+      root /var/www/static/example.com;
+   }
+
+   location / {
+      include uwsgi_params;
+      uwsgi_pass unix:/var/run/uwsgi/notes.sock;
+	  uwsgi_cache micro;
+	  uwsgi_cache_valid 10s;
+   }
+}
+
+
+############# Load balancing ##############
+
+upstream load_balance {
+   server 127.0.0.1:3000 max_fails=3 fail_timeout=20s;
+   server 127.0.0.1:4000    weight=5;
+   server 127.0.0.1:5000 max_fails=3 fail_timeout=30s;
+}
+
+server {
+   listen 80;
+   server_name example.com;
+
+   location / {
+     proxy_pass http://load_balance;
+   }
+}
+
+
+############ SSL configuration options #############
+
+ssl_session_timeout 1d;             ### SSL session timeout
+ssl_session_cache shared:SSL:50m    ### SSL caching
+ssl_session_tickets off;            ### store the ssl
+ssl_protocols TLSv1.2;              ### version for ssl
+ssl_ciphers 'ciph-list';            ### list of ciphers to be used
+ssl_prefer_server_ciphers on;       ### prefer the ones that are specified
+
+add_header Strict-Transport_security max-age=1576800   ### "force https"
+
+ssl_stapling on;                    ### prefetch the validity of your certificate
+
+
+########### install owasp mod security WAF ##############
+
+#clone owasp modsecurity core rule set from github
+
+[root] $ cd /etc/nginx/modsecurity
+[root] $ git clone https://github.com/SpiderLabs/owasp-modsecurity-crs.git
+[root] $ cd owasp-modsecurity-crs
+[root] $ cp crs-setup.conf{.example,}
+[root] $ cp rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf{.example,}
+[root] $ cp rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf{.example,}
+
+/etc/nginx/modsecurity/modsecurity_includes.conf
+
+include modsecurity.conf
+include owasp-modsecurity-crs/crs-setup.conf
+
+[root] $ for f in $(ls -1 owasp-modsecurity-crs/rules/ | grep -E "^(RESPONSE|REQUEST)-.*\.conf$"); do \
+  echo "include owasp-modsecurity-crs/rules/${f}" >> modsecurity_includes.conf; done
+
+
+in file /etc/nginx/conf.d/blog.example.com.conf
+
+
+modsecurity on;
+modsecurity_rules_file /etc/nginx/modsecurity/modsecurity_includes.conf;
+
+
+
+############# performance configurations ############
+
+/etc/nginx/nginx.conf
+
+gzip on;
+gzip_disable msie6;
+gzip_proxied no-cache no-store private expired auth;
+gzip_types text/plain text/css application/x-javascript application/javascript text/xml application/xml application/xml+rss text/javascript image/x-icon image/bmp image/svg+xml;
+gzip_min_length 1024;                 ### min lenght for compression
+gzip_vary on;
