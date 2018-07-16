@@ -1,0 +1,187 @@
+############### Overview ###############
+Jenkins is a open source automation server , it provides hundeds of plugins to support 
+building, deploying and automating of any project.
+
+Continiuos integration - software development practice where contributors are
+integrating their work very frequently. This result in multiple daily integrations
+to a mainline. Automated testing is commonly used.
+
+Continious Delivery - software development discipline where software is built so that it
+can be released to production at any time.
+software is always deployable throughout software development life cycle (SDLC)
+not breaking the build is prioritized over adding features.
+push-button deployments are possible of any version of the software
+
+Basic Workflow:
+1 - Checkout from Source Code managment (like git)
+2 - Branch and make local changes
+3 - Add or change tests as necessary
+4 - Trigger automated build locally
+5 - IF it is successful commit the code
+6 - Update with latest from mainline
+
+Best practices:
+1 - Maintain a single source repository
+2 - Have a common mainline Branch
+3 - Automate the Build
+4 - Minimize potential for user error
+5 - Make the Build self-testing
+
+
+################# Jenkins install #################
+Prerequisites are only jdk 
+
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import http://pkg.jenkins.io/redhat-stable/jenkins.io.key
+yum install -y jenkins-2.19.4-1.1
+
+## to add slave to the jenkins setup
+1 - su to user jenkins and generate ssh key
+2 - add the same user to the new system
+useradd -d /var/lib/jenkins jenkins
+3 - add the generated key to the jenkins user on the second host
+4 - configure the slave in the jenkins console
+
+
+########## Build Triggers ############
+
+Build periodically - Run the build on schedule
+Poll SCM - Check source repo for changes on a schedule and build if there any
+Build after other projects are build - Completion of another project's build triggers this one
+GitHub hook trigger - Github notifies jenkins using a webhook (http request), which triggers a build
+
+## Projects can be parameterized , parameters can be used in build steps by simple reference
+## for param my_var you can reference it with $MY_VAR
+
+
+########### install and configure ANT ##############
+Apache Ant is a Java library and command-line tool whose mission is to drive processes described in build files 
+as targets and extension points dependent upon each other. 
+The main known usage of Ant is the build of Java applications. 
+Ant supplies a number of built-in tasks allowing to compile, assemble, test and run Java applications
+
+Get the tarball
+wget http://apache.cbox.biz//ant/binaries/apache-ant-1.10.4-bin.tar.gz
+
+unpack and make symlink /ant/bin/ant to /usr/bin/ant
+
+
+################# Jenkinsfile ##################
+
+It defines your continious delivery pipeline and lives with your source code
+There are 2 styles of jenkins file , declarative and scripted
+
+Declarative example:                           Agent Directive:
+                                              
+pipeline {                                       agent none
+   agent any                                     agent {
+                                                   label 'CentOS'
+   stages {                                        }
+     stage('Build'){                             agent {
+	   steps {                                     docker 'openjdk:8u121-jre'
+	      echo "Building.."                        }
+	   }
+	 }
+   }
+}
+
+Example:
+
+pipeline {
+    agent {
+        label 'master'
+    }
+    stages {
+        stage('PRINT') {
+            steps {
+                sh 'echo $JOB_NAME'
+            }
+        }
+        stage('WRITE') {
+            steps {
+                sh 'echo $BUILD_NUMBER >> build_number'
+            }
+        }
+        stage('READ') {
+            steps {
+                sh 'cat build_number'
+            }
+        }
+    }
+    post {
+        success {
+            archiveArtifacts artifacts: 'build_number', fingerprint: true
+        }
+    }
+}
+
+Example pipeline with docker:
+
+pipeline {
+    agent { node {
+         label 'master' }
+             }
+    stages {
+
+        stage('Build the code') {
+               agent {
+               docker { image 'airdock/oracle-jdk:latest' 
+                        args '-v /var/lib/jenkins/projects/java/src:/src -v /var/lib/jenkins/projects/java/compiled:/compiled' 
+               }
+            }
+            steps { sh 'javac /src/hello.java -d /compiled' }
+        }
+        stage('Testing') {
+               agent {
+               docker { image 'airdock/oracle-jdk:latest' 
+                        args '-v /var/lib/jenkins/projects/java/src:/src -v /var/lib/jenkins/projects/java/compiled:/compiled' 
+               }
+            }
+            steps {
+                sh 'java -classpath /compiled Simple'
+            }
+        }
+        stage('Deploy') {
+           agent {
+               node { 
+                    label 'master'    
+               }
+            }
+            steps {
+                sh 'docker run -u root -d -v /var/lib/jenkins/projects/java/compiled:/compiled -v /scripts:/scripts -p 8000:8000 centos:latest /scripts/deploy.sh'
+            }
+            
+        }
+}
+}
+
+#In order to add environment variables to the pipeline the following syntax can be used.
+
+pipeline {
+   environment {
+   MAJOR_VERSION = 1
+   }
+}
+
+#to reference it again in the actual pipeline
+#${env.MAJOR_VERSION}
+
+############## Jenkins artifacts and fingerprints ##############
+
+Artifact can be anything produced by Jenkins build, anything that is archived will be on the jenkins master
+jenkins used md5 fingerprints for tracking changes
+
+############## Jenkins CLI ##############
+
+#Download the CLI
+wget http://master-url:8080/jnlpJars/jenkins-cli.jar
+
+#export jenkins url
+export JENKINS_URL='http://localhost:8080'
+
+#Create alias for jenkins-cli
+alias jenkins-cli='java -jar /root/jenking-cli.jar'
+
+#authenticate like
+jenkins-cli -auth user:pass
+jenkins-cli -auth @file-user-pass
