@@ -152,6 +152,11 @@ find / -perm +4000   # SUID
 find / -perm +2000   # SGID
 
 
+### Monitor traffic send and received per PID and user with nethogs
+yum install epel-release -y && yum install nethogs -y
+nethogs eth0
+
+
 #### Drop all spoofed/martians packets script
 
 #!/bin/bash
