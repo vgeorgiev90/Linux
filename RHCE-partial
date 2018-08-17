@@ -1,0 +1,262 @@
+############# Network teaming and bonding #############
+#Examples can be found in /usr/share/doc/teamd-1.27
+#load balancing or aggregation
+
+### Create connection
+nmcli con add type team con-name lateam0 ifname lateam0 config '{"runner": {"name": "activebackup"}}'
+
+#Options for the runner type are: activebackup, roundrobin, broadcast, loadbalance, lacp
+
+### to check team connection properties
+teamdctl lateam0 state
+
+### Add IP address to the connection
+nmcli con mod lateam0 ipv4.address '172.31.21.130/24'
+nmcli con mod lateam0 ipv4.method manual
+
+### Add ports to the connection
+nmcli con add type team-slave con-name lateam0-port1 ifname eth0 master lateam0
+nmcli con add type team-slave con-name lateam0-port2 ifname eth1 master lateam0
+
+### Activete the ports and the connection
+nmcli con up lateam0-port1
+nmcli con up lateam0-port2
+nmcli con up lateam0
+
+#### TASK ####
+create team/bond connection from at least two interfaces
+##############
+
+
+################# Config IPv6 addresses and troubleshoot #############
+
+### Create connection
+nmcli con add type ethernet con-name net6 ifname enp0s8
+
+### Add IP and manual 
+nmcli con mod con6 ipv4.addresses 192.168.1.10/24
+nmcli con mod con6 ipv4.method manual
+
+### Add ipv6 address
+nmcli con mod con6 ipv6.address fddb:fe2a:ab1e::c0a8:64/64
+nmcli con mod con6 ipv6.method manual
+
+### TASK ####
+Assign ipv6 address to at least two interfaces
+#############
+
+
+################# Route IP Traffic and Create static routes #############
+
+### Add static route
+ip route add 192.145.64.0/24 via 192.168.1.1 dev enp0s8
+
+### Delete
+ip route del 192.145.64.0/24 via 192.168.1.1 dev enp0s8
+
+### For a persisten static routes , create a file in sysconfig dir called static-routes (generally if the file exists all routes there are added)
+vi /etc/sysconfig/static-routes
+any net 192.145.64.0 netmask 255.255.255.0 gw 192.168.1.1 dev enp0s8
+
+#### TASK ####
+Add static routes to the system (persistent and temporary)
+##############
+
+
+################# Firewalld , rich rules, zones, NAT #################
+
+### Traffic is evaluated in all active zones before accept or drop
+firewall-cmd --get-active-zones
+
+### Add rich rule to the zone
+firewall-cmd --permanent --zone public --add-rich-rule 'rule family="ipv4" source address="192.168.55.145" port protocol="tcp" port="80" accept'
+
+### Extended rich rule with logging , prefix for logged events and connection limit
+
+firewall-cmd --permanent --zone internal --add-rich-rule \
+'rule family="ipv4" \
+source address=192.168.55.145 \
+port protocol="tcp" port="80" \
+log level=notice prefix="HTTP RULE" limit value="100/s" accept'
+
+### NAT port redirection with firewalld
+firewall-cmd --permanent --add-rich-rule \
+'rule family=ipv4 \
+source address=192.168.55.145 \
+forward-port port=43000 protocol=tcp to-port=22'
+
+### NAT port redirection to another host
+firewall-cmd --permanent --add-forward-port port=2222:proto=tcp:toport=22:toaddr=192.168.55.37
+firewall-cmd --permanent --add-masquerade
+
+##### TASK #####
+1. Add services to a zone
+2. Add several rich rules based on different ports , 
+protocols and sources (some of them must be logged, some limited)
+3. Add rich rules for port redirection
+##### Collective TASK #####
+1. Create either team or aggregated network interface
+2. Add it to zone and apply several rich rules and services
+###########################
+
+
+################## Modify and set kernel runtime parameters ################
+
+### All kernel runtime parameters are located in /proc/sys
+
+##### TASK #####
+1. Change kernel parameters to presists after reboot
+################
+
+
+################# Kerberos KDC setup ###################
+
+### First step will be to set up KDC authentication server
+yum install krb5-server krb5-workstation pam-krb5
+
+#### IMPORTANT #####
+# Make sure that there is proper dns resolution it may be in /etc/hosts too
+# MAKE SURE THAT THE HOST FQDN IS THE SAME AS hostname --fqdn
+# Port numbers can be found in /etc/services if forgotten
+####################
+
+### Server config dir
+/var/kerberos/krb4kdc
+
+Change the realm domain in kdc.conf
+##uncomment and add for only kerberos5 compat
+master_key_type = aes256-cts
+default_principal_flags = +preauth
+
+/etc/krb5.conf
+
+ default_realm = EXAMPLE.KDC
+ [realms]
+ EXAMPLE.KDC = {
+  kdc = server.example.kdc
+  admin_server = server.example.kdc
+ }
+[domain_realm]
+ .example.kdc = EXAMPLE.KDC
+ example.kdc = EXAMPLE.KDC
+
+/var/kerberos/krb5kdc/kadm5.acl
+
+*/admin@EXAMPLE.KDC     *
+
+### Create kerberos database
+kdb5_util create -s -r EXAMPLE.KDC
+
+### Start the service
+systemctl start krb5kdc kadmin && systemctl enable krb5kdc kadmin
+
+### Adding principals to the kdc server
+kadmin.local
+
+#principal for admin acc
+addprinc root/admin
+
+#principal for user acc
+addprinc krbtest 
+
+#principal for the server hostname that will be authenticated
+addprinc -randkey host/server.example.kdc
+
+#add ktab file in /etc
+ktadd host/server.example.kdc
+
+#In order to be able to use SSH with krb auth find and change
+/etc/ssh/ssh_config
+GSSAPIAuthentication yes
+GSSAPIDelegateCredentials yes
+
+authconfig --enablekrb5 --update
+
+### Firewall ports that needs to be opened either manually or with service
+88/tcp , 88/udp, 749/tcp
+
+#example service file
+<?xml version="1.0" encoding="utf-8">
+<service>
+  <short>Kerberos</short>
+  <port protocol="tcp" port="88"/>
+  <port protocol="udp" port="88"/>
+  <port protocol="tcp" port="749"/>
+</service>
+
+### In order to test it switch to krbtest user and perform kinit to auth
+
+##### Client setup #####
+yum install krb5-workstation
+modify  /etc/krb5.conf to reflect the correct realm
+add principal for the client host with kadmin and the admin set password
+modify /etc/ssh/ssh_config
+
+##### TASK #####
+Set up KDC authentication with one server and at least two clients
+################
+
+
+################## ISCSI target and initiator setup #####################
+
+### Port 3260/tcp
+### Server setup
+yum install targetcli
+systemctl enable target
+
+### Enter targetcli shell
+1. Create a backstore (block device)
+backstores/block create drive1 /dev/sdb1
+
+#For a file backstore 
+#backstores/fileio create name /path/to/file 200M
+
+2. Create iscsi qalified name
+iscsi/ create iqn.2018-08.localdomain.localhost:target1
+
+3. Create a lun
+iscsi/iqn.2018-08.localdomain.localhost:target1/tpg1/luns create /backstores/block/drive1
+
+4. Create a ACL
+iscsi/iqn.2018-08.localdomain.localhost:target1/tpg1/acls create iqn.2018-08.localdomain.localhost:client
+
+#Optional create username and password for the client
+iscsi/iqn.2018-08.localdomain.localhost:target1/tpg1/acls/iqn.2018-08.localdomain.localhost:client/ set auth userid=viktor
+iscsi/iqn.2018-08.localdomain.localhost:target1/tpg1/acls/iqn.2018-08.localdomain.localhost:client/ set auth password=viktor
+
+systemctl start target
+
+### Client config
+yum install iscsi-initiator-utils
+
+#modify /etc/iscsi/initiatorname.iscsi to reflect the correct iqn
+#modify /etc/iscsi/iscsid.conf
+node.session.auth.authmethod = CHAP
+node.session.auth.username = viktor
+node.session.auth.password = viktor123
+
+#Discover the target
+iscsiadm --mode discovery --type sendtargets --portal 192.168.55.198
+
+#Connect to the portal and login
+iscsiadm --mode node --target iqn.2018-08.localdomain.localhost:target1 --portal 192.168.55.198 --login
+
+#/etc/fstab entry
+UUID=b2f34042-7d54-46e7-b6fd-2fb387f855c3       /mnt    xfs     _netdev 0 0
+
+##### TASK #####
+Create and mount devices via iscsi (fileio, block)
+################
+
+
+################# Produce and deliver reports on system usage ###################
+
+### dstat tool
+yum install dstat
+
+### sysstat package
+#Generate a report between two dates
+sadf -s 01:00:00 -e 23:59:00 /var/log/sa/sa06
+
+#Generate a report 
+sadf -d /var/log/sa/sa07 -- -urd -n DEV
