@@ -229,7 +229,7 @@ systemctl start target
 ### Client config
 yum install iscsi-initiator-utils
 
-#modify /etc/iscsi/initiatorname.iscsi to reflect the correct iqn
+#modify /etc/iscsi/initiatorname.iscsi to reflect the correct iqn for the acl
 #modify /etc/iscsi/iscsid.conf
 node.session.auth.authmethod = CHAP
 node.session.auth.username = viktor
