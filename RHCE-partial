@@ -65,6 +65,8 @@ Add static routes to the system (persistent and temporary)
 
 ################# Firewalld , rich rules, zones, NAT #################
 
+### Pre configured service files can be found in /usr/lib/firewalld/services
+
 ### Traffic is evaluated in all active zones before accept or drop
 firewall-cmd --get-active-zones
 
@@ -260,3 +262,219 @@ sadf -s 01:00:00 -e 23:59:00 /var/log/sa/sa06
 
 #Generate a report 
 sadf -d /var/log/sa/sa07 -- -urd -n DEV
+
+
+################# Network Services ##########################
+
+### Selinux port labeling
+semanage port -l
+semanage port -a 21221 -p tcp -t ssh_context_t
+
+### TASK #####
+ Using sed, modify the /etc/httpd/conf.d/userdir.conf directory and replace UserDir disabled with UserDir public_html.
+ Create the public_html directory in the /home/user directory.
+ Set the user owner and group owner of the /home/user and permissions accordingly
+ Install the correct packages for troubleshooting SELinux policy denials and violations.
+ troubleshoot the selinux violations
+ Change the DocumentRoot of the httpd daemon
+##############
+
+
+############# Install and configure Apache #################
+
+### Configure private directories
+
+<Directory "/home/viktor/public_html">
+  AllowOverride All
+  Require all granted
+<Directory/>
+
+<Directory "/home/viktor/public_html/private">
+  AllowOverride AuthConfig
+</Directory>
+
+# .htaccess in the private directory
+AuthType Basic
+AuthName "Password protected"
+AuthUserFile "/etc/httpd/conf/.auth_users"
+Require user viktor
+
+# Create the password
+htpasswd -c /etc/httpd/conf/.auth_users viktor
+chown apache: /etc/httpd/conf/.auth_users
+chmod 600 /etc/httpd/conf/.auth_users
+
+##### TASK #####
+Create private directory for a user 
+################
+
+### Configure group managed content ###
+
+groupadd test
+mkdir /group-content
+chgrp test /group-content
+chmod 771 /group-content
+#Change selinux for the dir
+
+<Directory "/group-content">
+  AllowOverride AuthConfig
+</Directory>
+
+# /group-content/.htaccess
+AuthType Basic
+AuthName "pass protected dir"
+AuthUserFile "/etc/httpd/conf/.dbusers"
+AuthGroupFile "/etc/httpd/conf/.group"
+Require group test
+
+# /group-content/.group
+test: user1 user2
+
+# generate passwords for the group users
+htpasswd -c /etc/httpd/conf/.dbusers user1
+htpasswd /etc/httpd/conf/.dbusers user2
+ 
+##### TASK #####
+Create private directory for group
+################
+
+### Configure Virtual Host ###
+
+<VirtualHost *:80>
+  ServerAdmin admin@example.com
+  ServerName example.com
+  ServerAlias www.example.com
+  DocumentRoot /home/viktor/public_html
+
+  ErrorLog logs/example_error.log
+  CustomLog logs/example_access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+  ServerName example.com
+  DocumentRoot /home/viktor/public_html
+  ServerAlias www.example.com
+
+  ErrorLog logs/example_ssl_error.log
+
+  SSLEngine on
+  SSLCertificateFile /etc/httpd/certs/example.com.crt
+  SSLCertificateKeyFile /etc/httpd/certs/example.com.key
+
+</VirtualHost>
+
+
+## To execute cgi scripts for non default directory
+1. Change the selinux content to httpd_sys_script_exec_t for the new dir
+2. Change ScriptAlias in httpd.conf 
+
+#ScriptAlias /cgi-bin/ "/path/to/newdir"
+#<Directory "/path/to/newdir">
+#  AllowOverride None
+#  Options None
+#  Require all granted
+#</Directory>
+
+##### HTTPS #####
+
+## Generate key-par,csr,ca-certificate
+## examples can be found in /etc/pki/tls/certs
+
+yum install mod_ssl openssl
+
+#gen private key
+openssl genpkey -algorithm rsa -pkeyopt rsa_keygen_bits:2048 -out example.com
+
+#gen csr
+openssl req -new -key example.com -out example.com.csr
+
+#sign the csr
+openssl x509 -req -days 365 -signkey example.com -in example.com.csr -out example.com.crt
+
+
+#################### DNS Services ######################
+
+### Caching only nameservers
+yum install bind bind-utils
+
+# Changes in /etc/named.conf
+listen-on port 53 { any;};
+allow-query { any; };
+dnssec-validation no;
+
+named-checkconf
+systemctl enable named && systemctl start named
+
+#Do not forget to modify the firewall
+
+#Test
+nslookup linuxacademy.com 127.0.0.1
+dig @172.0.0.1 linuxacademy.com
+
+##### TASK #####
+Set up a caching only nameserver
+################
+
+
+###################### NFS server and client setup (Kerberos) #####################
+
+## NFS export file /var/lin/nfs/etab
+## NFS ports: 2049/tcp 2049/udp
+## RPCbind ports: 111/tcp 111/udp
+## Server setup
+yum install nfs-utils
+
+# Create export dirs one for rw, one for ro
+mkdir /nfs-rw /nfs-ro
+
+# Modify Selinux
+setsebool -P nfs_export_all_rw on
+setsebool -P nfs_export_all_ro on
+
+systemctl enable rpcbind nfs-server && systemctl start rpcbind nfs-server
+
+#/etc/exports
+/nfs-rw 10.1.1.23(rw,no_root_squash)
+/nfs-ro 10.1.1.20(sync)
+
+exportfs -avr
+
+### For group collaboration directory
+groupadd -g 7654 nfsadmins
+mkdir /group-export
+chown nfsnobody:nfsadmins /group-export
+chmod g+s /group-export
+#Group,gid,directory name and users must completely match on client and server
+
+
+#### NFS with Kerberos setup #### 
+#selinux nfs context and booleans
+semanage fcontext -at public_content_rw_t "/export-dir(/.*)?"
+
+## Add nfs-server principle to kdc server
+addprinc -randkey host/nfs.server
+ktadd host/nfs.server
+
+addprinc -randkey nfs/nfs.server
+ktadd nfs/nfs.server
+
+## In /etc/exports add as parameter sec=krb5
+
+#On the nfs client kadmin
+addprinc -randkey nfs/nfs.client
+ktadd nfs/nfs.client
+
+systemctl enable nfs-client.target && systemctl start nfs-client.target
+### When mounting use nfs4 type
+mount -t nfs4 -o sec=krb5 10.1.1.25:/export /mnt
+
+
+#### Client setup ####
+
+yum install nfs-utils
+systemctl enable rpcbind && systemctl start rpcbind
+mount -t nfs -o rw 10.1.1.25:/nfs-rw /mnt
+mount -t nfs -o ro 10.1.1.25:/nfs-ro /dir2
+
+/etc/fstab
+10.1.1.25:/nfs-rw /mnt  nfs   _netdev,rw   0 0
