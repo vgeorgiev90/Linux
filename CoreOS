@@ -1,0 +1,144 @@
+#################### Overview ######################
+Container Linux by CoreOS (formerly CoreOS Linux) is an open-source lightweight operating system 
+based on the Linux kernel and designed for providing infrastructure to clustered deployments, 
+while focusing on automation, ease of application deployment, security, reliability and scalability. 
+As an operating system, Container Linux provides only the minimal functionality required 
+for deploying applications inside software containers, together with built-in mechanisms for service discovery 
+and configuration sharing.
+
+####### CoreOS Architecture #########
+
+Etcd - service discovery, distributed stored data across CoreOS cluster
+Docker - provides the container engine for CoreOS, it reads and writes to etcd
+Fleet - distributed cluster init system, process management (receives systemd unit files and schedules them to the cluster)
+(replaced by kubernetes in enterprise edition)
+
+#example systemd unit file myapp.unit
+[Unit]
+Description=MyApp
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=30
+ExecStartPre=/usr/bin/docker kill busybox1
+ExecStartPre=/usr/bin/docker rm busybox1
+ExecStartPre=/usr/bin/docker pull busybox
+ExecStart=/usr/bin/docker run --name busybox1 busybox /bin/sleep 50000
+
+[Install]
+WantedBy=multi-user.target
+
+#Usefull systemd unit variables
+%n   -   Full unit name
+%m   -   Machine id 
+%b   -   Bood Id
+%h   -   Hostname
+
+####### Tectonic (Enterprise solution) #######
+
+Tectonic is the secure, automated, and hybrid enterprise Kubernetes platform. 
+It automates operational tasks, enables platform portability and multi-cluster management, 
+and is always current with the latest upstream OSS so as to eliminate vendor lock-in.
+
+
+############## Rocket (rkt) #################
+
+Container runtime for applications made for CoreOS ( alternative to docker )
+Based on Application Container Image (ACI)
+Pod-native: rkt's basic unit of execution is pod, linking togheter resources and user applications
+in a self-contained environment
+
+
+#### Ignition ####
+CoreOs utility used to configure new machnies simillar to cloud-config
+Differences between ignition and cloud-config
+ignition:       cloud-config:
+.json            .yml or bash
+runs once        processed on every boot
+versioning       no versioning
+
+#In order to convert cloud init yaml files to ignition json formated file
+#ct utility can be used
+ct -in-file cloud-config -out-file ignition.json -platform ec2
+
+######## Matchbox #######
+
+service that matches bare-metal machines (based on labels like MAC, UUID, etc.) to profiles that PXE boot and provision 
+Container Linux clusters. Profiles specify the kernel/initrd, kernel arguments, 
+PXE config, GRUB config, Container Linux Config, or other configs a machine should use. 
+Matchbox can be installed as a binary, RPM, container image, 
+or deployed on a Kubernetes cluster and it provides an authenticated gRPC API for clients like Terraform.
+
+#Install on CoreOS in rkt container
+wget https://github.com/coreos/matchbox/releases/download/v0.7.0/matchbox-v0.7.0-linux-amd64.tar.gz
+cd /matchbox-v0.7.0-linux-amd64/contrib/systemd
+#Copy the unit file to /etc/systemd/system
+cd /root/matchbox-v0.7.0-linux-amd64/scripts/tls
+export SAN=DNS.1:matchbox.example.com,IP.1=18.204.42.241
+mkdir /etc/matchbox
+mv ca.* /etc/matchbox/
+mv server.* /etc/matchbox/
+mkdir ~/.matchbox
+mv client.* ~/.matchbox
+#Create host entry
+# Start the matchbox service
+
+###### update_engine #######
+
+CoreOS employs automatic update strategy.
+It used gpart tables for active and passive partitions on the system.
+Updates are downloaded to passive partitions and are swaped to active partitions on reboot
+On system boot grub checks the priorities and mounts partitions accordingly
+
+cgpt show /dev/sda1
+
+UUID: 75D9A896-FCE5-4251-B507-274195A05C36
+Label: "USR-A"
+Type: Alias for coreos-rootfs
+UUID: 7130C94A-213A-4E5A-8E26-6CCE9662F132
+Attr: priority=1 tries=0 successful=1
+
+Label: "USR-B"
+Type: Alias for coreos-rootfs
+UUID: E03DD35C-7C2D-4A47-B3FE-27F15780A57C
+Attr: priority=0 tries=0 successful=0
+
+cgpt find -t coreos-usr
+#indentifies all root partitions
+rootdev -s /usr
+#Find active partiotion
+
+cgpt prioritize /dev/sda3
+#change the priorities of partitions (rollback an update)
+
+############## Networkd ######################
+systemd-networkd -- a system service to manage networks
+detects and configures network devices
+
+#Configuration files
+system network directory   ---   /usr/lib/systemd/network
+volatile runtime directory ---   /run/systemd/network
+local administration dir   ---   /etc/systemd/network
+
+#example /etc/systemd/network/10-static.network
+[Match]
+Name=enp0s3
+
+[Network]
+DNS=8.8.8.8
+Address=192.168.1.10/24
+Gateway=192.168.1.1
+
+#systemctl restart systemd-networkd
+
+################ Install ####################
+Get the CoreOS image
+add your public_key to cloud_config.yml
+#Upload it to web server and use curl or wget
+#cloud-config
+ssh_authorized_keys:
+  - ssh_rsa AAAAB3NzaC1...snip
+  
+# install
+coreos-install -d /dev/sda -C stable -c ~/cloud_config.yml
