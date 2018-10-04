@@ -1,1 +1,54 @@
 #################### Overview ######################
+Beats - Lightweight data snippers
+filebeat - log files
+metricbeat - metrics
+packetbeat - network data
+heartbeat - uptime monitoring
+auditbeat - audit data
+
+logstash - data processing pipeline
+elasticsearch - search & analytics engine
+kibana - visualize & manage data
+
+
+
+################### Instalations ####################
+
+ES can be installed on:
+RHEL/CentOS
+- tar.gz
+- rpm
+- yum repo
+
+Debian
+- tar.gz
+- dpkg
+- apt repo
+
+
+If installed from archive:
+install java-jdk
+create user for elasticsearch
+
+Ports:
+9200 - http interacting with http endpoints
+9300 - cluster comunication
+
+elastic repo:
+
+[elastic]
+name=Elastic Repo
+baseurl=https://artifacts.elastic.co/packages/6.x/yum
+gpgcheck=0
+enabled=1
+
+install java and elasticsearch
+
+install kibana
+from the es repo
+yum install kibana
+
+kibana config file
+/etc/kibana/kibana.yml
+server.host - kibana host
+elasticsearch.url: - url to connect to elasticsearch
