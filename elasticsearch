@@ -10,6 +10,23 @@ logstash - data processing pipeline
 elasticsearch - search & analytics engine
 kibana - visualize & manage data
 
+index - collection of documents (expressed in JSON)
+shard - piece of an index , there are primary and replica shards.
+replicas are never allocated on the same node as the primary shard
+
+cluster states:
+green - all primary shards are allocated , all replica shards are allocated
+yellow - all primary shards are allocated , one or more replica shards are unallocated
+red - one or more primary shards are unallocated
+
+example:
+With replica set to 1 , for green state at least 2 nodes are needed
+
+Node types:
+master-eligible nodes - responsible for cluster management, create/delete indexes , track cluster members, shard allocation
+data node - contains shards , handles crud operations
+ingest node - executes pre-processing pipelines
+coordinating-only node - smart load balancer , handles search reducing , distributes bulk indexing
 
 
 ################### Instalations ####################
@@ -52,3 +69,141 @@ kibana config file
 /etc/kibana/kibana.yml
 server.host - kibana host
 elasticsearch.url: - url to connect to elasticsearch
+
+elasticsearch config file:
+cluster.name: NAME
+node.name: NAME
+network.host: [_local_,_site_]   - to bind to lo and the private IP address
+node.master: true
+node.data: false
+
+for data nodes:
+discovery.zen.ping.unicast.hosts: ["10.50.80.100"]
+discovery.zen.minimum_master_nodes: 3   -  set the minimum master to number that will have quorum in the total master nodes [5 master nodes - set it to 3 etc..]
+
+
+
+################ Indexes ##############
+settings - index-level settings , number of shards , number of replicas
+mappings - mapping types, like a schema of the index
+aliases - search one or many indexes
+
+index template - automatically structure new indexes, include settings , mapping, and aliases
+
+
+############### Basic queries in es ##################
+
+GET new_index/_settings        --    get settings for the index
+GET /_cluster/health           --    get cluster health status
+GET /_cat/nodes?v              --    query the nodes in the cluster
+GET /_cat/indices?v            --    query all indices in the cluster
+PUT my_index                   --    create index
+PUT my_index/_alias/my_alias   --    create alias
+DELETE my_index                --    delete index
+
+#example:
+
+PUT my_index {
+  "aliases": { "my_alias": {} },
+  "mappings": { "my_type": { "properties": {} } },
+  "settings": {
+    "number_of_shards": 2,	# number of data nodes
+	"number_of_replicas": 2
+  }
+}
+
+#Index template:
+
+PUT _template/NAME
+{
+  "aliases": { "my_alias": {} },
+  "mappings": { "my_type": { "properties": {} } },
+  "settings": {
+    "number_of_shards": 2,	                                 # number of data nodes
+	"number_of_replicas": 2
+  },
+  "index_patterns": "my_index*"                              # Pattern to match created indexes
+}
+
+##### Working with documents in indexes #####
+
+## put document to index
+
+PUT /index_name/type/id
+{
+  "user": "viktor",
+  "birth": "90"
+}
+
+# Read document
+GET index_name/type/id
+
+#update document
+POST index_name/type/id/_update
+{
+  "doc": {
+    "user": "stefa"
+  }
+}
+
+## delete document
+DELETE index_name/type/id
+
+## bulk api indexing
+curl -H 'Content-Type: application/x-ndjson' -X POST localhost:9200/index_name/type/_bulk?pretty --data-binary @file.json
+
+
+######  CAT APIs for cluster imformation ######
+GET /_cat/
+
+#common query string parameters:
+?v - verbose output which includes additional info, headers , whitespace
+?help   -  list default and available headers
+?h=      -  can provide an explicit list of headers
+?format - can output the result as json(&pretty) , yaml or cbor
+?sort   - sorts the results by columns specified
+
+examples:
+GET /_cat/nodes?help
+GET /_cat/nodes?h=ip,n
+
+
+########### ES in prod environments ###########
+
+Rolling restart of es cluster:
+1. Wait for Green cluster state
+2. Reduce shard allocation to none or new_primaries
+curl -X PUT localhost:9200/_cluster/settings?pretty -H "Content-Type: application/json" -d '{
+  "persistent": {
+    "cluster.routing.allocation.enable": "new_primaries"
+  }
+}'
+3. restart elasticsearch service
+4. increase shard allocation to all
+curl -X PUT localhost:9200/_cluster/settings?pretty -H "Content-Type: application/json" -d '{
+  "persistent": {
+    "cluster.routing.allocation.enable": "all"
+  }
+}'
+
+Elasticsearch upgrades:
+rolling upgrade:
+1. wait for green cluster state
+2. reduce shard allocation to none or new_primaries
+3. stop es
+4. upgrade es
+5. upgrade es plugins if any
+6. start es
+7. increase shard allocation to all
+
+############# X-Pack Monitoring #############
+For ES >= 6.3 x-pack is open sourced and prepackaged in elasticsearch
+To enable monitoring set in elasticsearch.yml file 
+xpack.monitoring.enabled: true
+xpack.monitoring.collection.enabled: true
+xpack.moniotirng.exporters:
+  1:
+    type: http
+    host: "http://remote-es-cluster:9200"
+	
+## For remote monitoring of the cluster
