@@ -207,3 +207,68 @@ xpack.moniotirng.exporters:
     host: "http://remote-es-cluster:9200"
 	
 ## For remote monitoring of the cluster
+
+############### ES curator ######################
+
+## Add es curator repository
+[curator-5]
+name=CENTOS7 repo for ES curator 5.x packages
+baseurl=https://packages.elastic.co/curator/5/centos/7
+gpgcheck=1
+gpgkey=https://packages.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+
+## Modify the curator config and actions file
+mkdir /etc/curator
+
+#config.yml
+---
+client:
+  hosts:
+    - localhost
+  port: 9200
+# master_only: true         ## specify curator to run only on the master node
+
+logging:
+  loglevel: INFO
+  logfile: /var/log/elasticsearch/curator.log
+
+#actions.yml
+---
+actions:
+  1:
+    action: delete_indices
+    description: delete indices older than 5 days
+    options:
+      ignore_empty_list: true
+      disable_action: false                      ### enable or disable the action
+    filters:
+    - filtertype: pattern
+      kind: prefix
+      value: logstash-*
+    - filtertype: age
+      source: field_stats
+      field: '@timestamp'
+      direction: older
+      unit: days
+      unit_count: 5
+      stats_result: max_value
+
+
+
+## Run curator
+curator --config /etc/curator/config.yml /etc/curator/actions.yml	  
+
+############### ES JVM heap and best practices #################
+
+Set the Min and Max Heap to the same value
+Xms and Xmx should be equal in JVM options
+set heap to max of 50% of system memory
+Disable ES swaping heap to disk
+disable swap, set v.swappiness to 1 (system wide settings)
+enable memory locking in es
+1. set bootstrap.memory_lock in es config file
+2. override system limits for the es service
+[Service]
+LimitMEMLOCK=infinity
+
