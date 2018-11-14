@@ -1,0 +1,179 @@
+############# Cryptography ##############
+
+#X509 Certificates and public key infrastructures
+#symetric encryption - data is encrypted/decrypted with the same key
+#asymetric encryption - data is encrypted with public key and decrypted with private key
+
+
+#Generate private key with openssl
+openssl genrsa -aes128 -out private-key.pem
+
+#self signed certificate
+openssl req -utf8 -new -key key.pem -x509 -days 300 -out certificate.pem
+
+#display certificate
+openssl x509 -in cert.pem -text -noout
+
+#csr generation
+openssl req -new -key key.pem -out file.csr
+
+
+## Mod ssl special features
+Server Name Indication (SNI)
+Starting with apache 2.2 it is possible to have many certificates bound to the same socket with SNI
+SSLStrictSNIVHostCheck
+
+HTTPS Strict Transport Security (HSTS)
+way to encourage encryption for the entire domain , rather than the selected parts.
+special header is sent by the web server which tels the browser to direct all traffic over ssl
+
+
+## Use openssl to check security info
+openssl s_client -connect HOST:443
+
+
+################ Encrypted volumes #################
+
+#disk encryption tools
+dm-encrypt and LUKS
+cryptmount
+
+#fs encryption tools
+eCryptfs, EncFS
+
+#working with LUKS
+#install cryptsetup package
+
+#Create luks format partition
+cryptsetup luksFormat /dev/device
+
+#Prepare volume for Mount
+cryptsetup luksOpen /dev/device NAME-FOR-VOL
+
+## For on boot mount key must be created
+dd if=/dev/urandom of=/root/luks-key bs=4096 count=1 && chmod 600 /root/luks-key
+
+## Add the key to the encrypted volume
+cryptsetup luksAddKey /dev/device /root/luks-key
+
+## Create /etc/crypttab
+NAME-FOR-VOL  /dev/device      /root/luks-key    luks
+
+
+############# DNS and encryption #########
+#Means of securing DNS
+TSIGs  - method of digitally signing data provided to a resolved or data sent in a zone transfer
+running named server in a chroot jail
+
+### Rootkit check
+chkrootkit -q
+
+#rkhunter
+rkhunter -c --cronjo -rwo
+/var/log/rkhunter/rkhunter.log
+
+#AIDE may also detect rootkits
+
+
+### Working with auditd
+Commands:
+ausearch
+aureport
+auditctl
+#clear audit trace for a command
+autrace
+
+#autrace /bin/ls -l
+
+configurations:
+/etc/audit/auditd.conf
+/etc/audit/rules.d
+/etc/audit/audit.rules
+
+#example rule creation
+auditctl -w /etc/shadow -p rw -k pass-watch
+
+#check rules
+auditctl -l
+
+## Some examples can be found in
+/usr/share/doc/audit-version
+
+#search for rule events
+ausearch -k pass-watch
+
+
+########## PAM #############
+
+Configure pam_cracklib and pam_tally2
+
+## Config for 10minutes block after 2 failed login attempts
+vi /etc/pam.d/common-auth
+
+auth    required        pam_tally2.so   deny=2  unlock_time=600
+
+## Config for password length and retry attmepts for pass change
+
+/etc/pam.d/common-password
+password        requisite                       pam_cracklib.so retry=3 minlen=10 difok=3
+
+
+##### SSSD #######
+Provides a set of daemons to manage access to remote directories and authentication mechanisms
+
+
+#install sssd
+
+yum install -y sssd sssd-tools
+
+#config sssd for local auth
+
+cp /usr/share/doc/sssd-common-1.16.0/sssd-example.conf /etc/sssd/sssd.conf && chmod 0600 /etc/sssd/sssd.conf
+
+vi /etc/sssd/sssd.conf
+
+domains = LOCAL
+
+[domain/LOCAL]
+id_provider = local
+auth_provider = local
+min_id = 2000
+
+
+systemctl start sssd
+
+authconfig --enablesssd --enablesssdauth --enablemkhomedir --updateall
+
+sss_useradd shanks
+passwd shanks
+
+###### IPsets basics ##########
+
+# Create ip set and add some ip and port combinations
+ipset create clienthosts hash:ip,port
+
+# Add some sets
+ipset add clienthosts 10.0.1.100:80
+ipset add clienthosts 10.0.1.100:443
+
+#Save the config
+ipset save clienthosts > /etc/sysconfig/ipset
+
+
+## Add new rule for the ipset
+iptables -I INPUT -m set --match-set clienthosts src,dst -j ACCEPT
+
+## Save rule config
+iptables-save > /etc/sysconfig/iptables
+
+###### Ebtables ########
+
+Used to insert and filter Ethernet frames
+default chains:
+filter
+broute
+nat
+
+Specific options:
+-Ln  list line numbers when printing a rule set
+-Lc  list packet and byte counters with each rule
