@@ -1,0 +1,60 @@
+##################### Overview #######################
+
+Pacemaker is a high-availability cluster resource manager.
+It achieves maximum availability for your cluster services (a.k.a. resources) by detecting and recovering 
+from node- and resource-level failures by making use of the messaging and membership capabilities provided by Corosync.
+It can do this for clusters of practically any size and comes with a powerful dependency model that allows the administrator 
+to accurately express the relationships (both ordering and location) between the cluster resources.
+Virtually anything that can be scripted can be managed as part of a Pacemaker cluster.
+
+##Ref: https://wiki.clusterlabs.org/wiki/Pacemaker
+
+
+############ Example set up HA apache cluster with pacemaker ##################
+
+
+#### Install pacemaker and pcs #####
+
+yum install pacemaker pcs -y
+
+## Start and enable pcsd service on all nodes
+
+systemctl start pcsd && systemctl enable pcsd
+
+## Set password for hacluster user that was created
+
+## Auth pcsd on all nodes
+pcs cluster auth node1 node2
+
+## Setup the cluster and synchronize coreosync configs
+
+pcs cluster setup --name hacluster node1 node2
+
+
+## Start the cluster
+
+pcs cluster start --all
+pcs status
+
+## Change stonith enabled property to false
+
+pcs property stonith-enabled=false
+
+## Add IP resource 
+
+pcs resource create cluster_ip ocf:heartbeat:IPaddr2 ip=10.0.0.1 cidr_netmask=24 op monitor interval=30s
+
+## Add apache http server resource
+
+pcs resource create apache ocf:heartbeat:apache configfile=/etc/httpd/conf/httpd.conf statusurl="http://localhost/server-status" op monitor interval=1min
+
+## Set collocation constraint so the resources can run on the same node togheter
+
+pcs constraint colocation add apache with cluster_ip INFINITY
+
+## Set order constraint so the cluster ip resource can start before the apache resource
+
+pcs constraint order cluster_ip then apache
+
+#to check constraints
+pcs constraint
