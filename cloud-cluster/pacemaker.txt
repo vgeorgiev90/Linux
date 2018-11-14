@@ -38,7 +38,7 @@ pcs status
 
 ## Change stonith enabled property to false
 
-pcs property stonith-enabled=false
+pcs property set stonith-enabled=false
 
 ## Add IP resource 
 
