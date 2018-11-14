@@ -177,3 +177,8 @@ nat
 Specific options:
 -Ln  list line numbers when printing a rule set
 -Lc  list packet and byte counters with each rule
+
+####example:
+# Associate IP addresses to MAC addresses (anti-spoofing rules):
+ebtables -A FORWARD -p IPv4 --ip-src 172.16.1.4 -s ! 00:11:22:33:44:55 -j DROP
+
