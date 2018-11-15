@@ -10,6 +10,39 @@ Virtually anything that can be scripted can be managed as part of a Pacemaker cl
 ##Ref: https://clusterlabs.org/pacemaker/doc/en-US/Pacemaker/2.0/html/Clusters_from_Scratch/index.html
 
 
+############ Pacemaker architecture #################
+Cluster information Base (CIB) - it keeps the current state of all the cluster resources in XML . THe information is then used by
+the PEngine to determine the ideal state of the cluster
+
+Cluster Resource Management daemon (CRMd) - each node in the cluster has an instance of crmd and the cluster elects one of these to be master or designated controller (DC). It takes the information from the PEngine and passes it on the local resource management daemon, and it is executed on the infividual members of the cluster
+
+Local Resource management daemon (LRMd) - it is responsible for carrying out the instructions it receives from CRMd on its cluster node.
+
+Policy Engine (PEngine) - It takes the information from the CIB and determines the ideal state of he cluster which it passes to the DC tp ne carried out to nodes.
+
+Fencing daemon (STONITHd) - it is responsible for shutting down nodes in order to protect shared data or to facilitate recovery
+
+############ Utilities and configuration #####################
+#Corosync commands:
+corosync-cfgtool - tool that is used to display information and configure corosync
+corosync-cmapctl - tool that is used to access and configure the object database
+corosync-quorumtool - tool that is used to display the current quorum state and set quorum options
+
+
+#Pacemaker resource classes
+Open Cluster Framework (OCF) - extension of the linux standard base (LSB)
+Linux Standard Base(LSB) - includes resource agents found in /etc/init.d
+Systemd - includes the unit files provided by systemd
+
+#List available classes/resources
+pcs resource standards
+
+#List available resource providers
+pcs resource providers
+
+#list available resource agent for given class and provider
+pcs resource agents ofc:heartbeat
+
 ############ Example set up HA apache cluster with pacemaker ##################
 
 
@@ -58,3 +91,29 @@ pcs constraint order cluster_ip then apache
 
 #to check constraints
 pcs constraint
+
+
+
+##### Configure STONITH #####
+
+1. Install fencing agents
+yum install fence-
+
+2. List available stonith agents and parameters
+pcs stonith list
+pcs stonith describe
+
+3. Create local copy of the CIB
+pcs cluster cib config_name
+
+4. Create the fencing resource
+pcs -f config_name stonith create resource_name stonith_device_type [stonith_device_options]
+
+5. Enable stonith for the cluster
+pcs -f config_name property set stonith-enabled=true
+
+6. Commit configuration
+pcs cluster cib-push config_name
+
+7. Test configuration
+stonith_admin --reboot NODE
