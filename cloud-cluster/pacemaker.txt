@@ -7,7 +7,7 @@ It can do this for clusters of practically any size and comes with a powerful de
 to accurately express the relationships (both ordering and location) between the cluster resources.
 Virtually anything that can be scripted can be managed as part of a Pacemaker cluster.
 
-##Ref: https://wiki.clusterlabs.org/wiki/Pacemaker
+##Ref: https://clusterlabs.org/pacemaker/doc/en-US/Pacemaker/2.0/html/Clusters_from_Scratch/index.html
 
 
 ############ Example set up HA apache cluster with pacemaker ##################
