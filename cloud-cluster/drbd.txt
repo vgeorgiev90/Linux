@@ -1,0 +1,79 @@
+############# Overview ##################
+
+DRBD is a distributed replicated storage system for the Linux platform. 
+It is implemented as a kernel driver, several userspace management applications, and some shell scripts. 
+DRBD is traditionally used in high availability (HA) computer clusters, but beginning with DRBD version 9, 
+it can also be used to create larger software defined storage pools with a focus on cloud integration.
+
+#Ref: https://docs.linbit.com/docs/users-guide-8.4/
+
+
+############# drbd config ################
+
+## Install el repo and import gpg key
+
+rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+
+rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
+
+
+## Install all required packages
+
+yum install kmod-drbd84 drbd84-utils -y
+
+
+## Load drbd kernel module and start/enable service
+
+modprobe drbd
+systemctl start drbd && systemctl enable drbd
+
+
+## Create LVM volume and group for drbd
+
+
+## Create config file for drbd for replication mode
+
+vi /etc/drbd.d/global_common.conf
+
+net {
+  protocol C;
+}
+
+
+## Create drbd resource file on all nodes
+
+vi drbd1.res
+
+resource drbd1 {
+  device /dev/drbd1;
+  disk /dev/vg-drbd/lv-drvd;
+  meta-disk internal;
+  on drbd-server1 {
+    address 10.0.11.150:7790;
+  }
+  on drbd-server2 {
+    address 10.0.11.151:7790;
+  }
+}
+
+
+## Create device meta-data
+
+drbdadm create-md drbd1
+
+## Bring up the device
+
+drbdadm up drbd1
+
+## Set drbd device to primary on one of the node
+
+drbdadm primary --force drbd1
+
+## Create file system on the device ( on one of the nodes )
+
+mkfs.ext4 /dev/drbd1
+
+
+## For status check
+
+cat /proc/drbd
