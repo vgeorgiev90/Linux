@@ -7,6 +7,79 @@ it can also be used to create larger software defined storage pools with a focus
 
 #Ref: https://docs.linbit.com/docs/users-guide-8.4/
 
+#Resource Roles:
+Primary - Devices in the primary role are given unrestricted access for read and write operationsand can perform actions such as creating and mounting file systems.
+Secondary - Devices in the secondary role are restricted from read and write operations, but still receive updates from their primary device about the state of the shared storage
+
+#Resource modes:
+Single-primary mode - In this mode only a single resource is allowed to function in the primary role.This is used to setup failover cluster and allows the use of non-sharable fs like ext4,xfs,ext3
+Dual-primary mode - In this mode both resources function in the primary role , allowing for concurent read and write operations.This mode requires fs that implement a distributed lock manager like GFS2, OCFS2
+
+#Replication modes:
+Protocol A (asynchronous) - This protocol mode is often used with long distance replication
+Protocol B(semi-synchronous)
+Protocol C(synchronous) - This protocol offers the greatest level of data protection.
+
+############ cLVM with Pacemaker #########
+
+1. Install required packages
+yum intall lvm2-cluster fence-agents-scsi
+
+2. Set locking type to be 3 in /etc/lvm/lvm.conf
+lvmconf --enable-cluster
+reboot
+
+3. Configure stonith for the shared resource
+ll /dev/disk/by-id | grep DISK
+pcs stonith create fence fence_scsi pcmk_host_list="host1 host2" devices=/dev/disk/by-id/ID meta provides=fencing
+
+4. set the no_quorum_policy to freeze
+pcs property set no-quorum-policy=freeze
+
+5. Set the lock manager resource
+pcs resource create dlm ocf:pacemaker:controld op monitor interval=30s on-fail=fence clone interleave=true ordered=true
+
+6. Set up clvmd as cluster resource
+pcs resource create clvmd ocf:heartbeat:clvm op monitor interval=30s on-fail=fence clone interleave=true ordered=true
+
+7. Setup order and collocation constraints
+pcs constraint order start dlm-clone then clvmd-clone
+pcs constraint colocation add clvmd-clone with dlm-clone
+
+8. Create logical volumes
+pvcreate /dev/vda1
+vgcreate -Ay -cy VG_NAME /dev/vda1
+lvcreate -L 1G -n LV_NAME VG_NAME
+
+Note: vgchange -cy VG_NAME can be used on existing volume group
+
+############# drbd with pacemaker ##########
+
+1. Ensure drbd does not start at boot
+
+2. Ensure your network resource is using single primary mode with protocol C
+
+3. brung up the reousrce and set to primary
+drbdadm up db01
+drbdadm primary --force db01
+
+4. Create local copy of CIB
+pcs cluster cib cib_local
+
+5. Update properties and resouce configs
+pcs -f cib_local property set stonith=false
+pcs -f cib_local property set no-quorum-policy=ignore
+pcs -f cib_local resource defaults resource-stickiness=200
+
+6. Create cluster resource and clone for drbd device
+pcs -f cib_local resource create db_data ocf:linbit:drbd drbd_resource=db01 op monitor interval=30s
+pcs -f cib_local resource master db_data_clone db_data master-max=1 master-node-mas=1 clone-max=2 clone-max-node=1 notify=true
+
+7. Validate configuration and commit changes
+pcs -f cib_local resource show
+pcs cluster cib-push cib_local --config
+pcs status
+
 
 ############# drbd config ################
 
@@ -77,3 +150,24 @@ mkfs.ext4 /dev/drbd1
 ## For status check
 
 cat /proc/drbd
+
+
+################# GFS2 with pacemaker ####################
+Note: This example assumes that the pacemaker cluster has already been configured and that shared storage exists for the cluster nodes
+
+1. Install packages
+yum install lvm2-cluster fence-agent-scsi gfs2-utils
+
+2. cLVM with Pacemaker
+
+3. Create GFS2 filesystem on the newly created logical volume
+mkfs.gfs2 -t CLUSTER_NAME:FILESYSTEM_NAME -j 2 -J32 -p lock_dlm /dev/VG/LV
+#-j journals numbers must be equal to the nodes
+
+4. Create cluster fs resource
+pcs resource create FS_NAME Filesystem device="/dev/VG/LV" directory="/mnt/MOUNT-POINT" fstype="gfs2" op monitor interval=10s on-fail=fence clone interleave=true
+
+5. Configure order and colocation for clvmd and the fs
+pcs constraint order start clvmd-clone then FILESYSTEM-NAME-clone
+pcs constraint colocation add FS-NAME-clone with clvmd-clone
+
