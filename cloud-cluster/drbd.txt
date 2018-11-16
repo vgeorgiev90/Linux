@@ -153,7 +153,7 @@ cat /proc/drbd
 
 
 ################# GFS2 with pacemaker ####################
-Note: This example assumes that the pacemaker cluster has already been configured and that shared storage exists for the cluster nodes
+Note: This example assumes that the pacemaker cluster has already been configured and that shared(iscsi) storage exists for the cluster nodes
 
 1. Install packages
 yum install lvm2-cluster fence-agent-scsi gfs2-utils
