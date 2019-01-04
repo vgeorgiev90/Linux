@@ -150,7 +150,7 @@ crm(live)configure# exit
 
 
 ######### Configure nfs exports and virtual IP resources with order and collocation
-
+(from whichever node has 'p_nfsserver' started in your cluster)
 
 mkdir /mnt/drbd/export
 chown nobody: /mnt/drbd/export
