@@ -1,0 +1,186 @@
+######### Guide for ubuntu ############
+
+#### Install ntp
+apt-get install ntp -y; systemctl enable ntp; systemctl start ntp
+
+#### Install pacemaker
+apt-get install pacemaker -y
+
+#### Install drbd
+apt-get install drbd8-utils -y
+systemctl disable drbd
+
+# Configure drbd  ( create /etc/drbd.d/r0.res )
+
+resource r0 {
+  protocol C;
+  device /dev/drbd0;
+  disk /dev/vg_drbd/lv_r0;
+  meta-disk internal;
+  on HOSTNAME1 {
+  address 172.16.0.201:7788;
+  }
+  on HOSTNAME2 {
+  address 172.16.0.202:7788;
+  }
+}
+
+
+#(both nodes)
+drbdadm create-md r0
+drbdadm up r0
+
+# Skip the initial sync ( node A )
+drbdadm -- --clear-bitmap new-current-uuid r0/0
+
+# make node-a Primary and create a filesystem on the drbd device
+drbdadm primary r0
+mkfs.xfs /dev/drbd0
+drbdadm secondary r0
+
+
+###### Install pacemaker
+apt-get install pacemaker -y
+
+###### Configure corosync
+/etc/corosync/corosync.conf
+
+totem {
+  version: 2
+  secauth: off
+  cluster_name: cluster
+  transport: udpu
+  rrp_mode: passive
+}
+nodelist {
+  node {
+  ring0_addr: 172.16.0.201
+  #ring1_addr: 192.168.10.201
+  nodeid: 1
+  }
+  node {
+  ring0_addr: 172.16.0.202
+  #ring1_addr: 192.168.10.202
+  nodeid: 2
+  }
+}
+quorum {
+  provider: corosync_votequorum
+  two_node: 1
+}
+logging {
+  to_syslog: yes
+}
+
+systemctl start corosync
+systemctl start pacemaker
+
+
+####### Aditional config
+# In case of two nodes tell corosync to ignore quorum (run on 1 node)
+
+crm configure property no-quorum-policy=ignore
+# Disable stonith
+
+crm configure property stonith-enabled=false
+
+	
+#########################  Configure pacemaker for ha nfs  ##################################
+
+
+# DRBD is the first resource we will configure in Pacemaker. Use the following commands to pull a working version of the
+#Cluster Information Base (CIB), configure the DRBD primitive, and finally the Master/Slave set for DRBD:
+
+# crm configure
+crm(live)configure# primitive p_drbd_r0 ocf:linbit:drbd \
+  params drbd_resource=r0 \
+  op start interval=0s timeout=240s \
+  op stop interval=0s timeout=100s \
+  op monitor interval=31s timeout=20s role=Slave \
+  op monitor interval=29s timeout=20s role=Master
+crm(live)configure# ms ms_drbd_r0 p_drbd_r0 meta master-max=1 \
+  master-node-max=1 clone-max=2 clone-node-max=1 notify=true
+crm(live)configure# verify
+crm(live)configure# commit
+crm(live)configure# exit
+
+
+## With DRBD running, we can now configure our filesystem within Pacemaker. We will need to configure colocation
+#and order constraints to ensure that the filesystem is mounted where DRBD is Primary, and only after DRBD has been
+#promoted to Primary:
+
+
+# crm configure
+crm(live)configure# primitive p_fs_drbd0 ocf:heartbeat:Filesystem \
+  params device=/dev/drbd0 directory=/mnt/drbd fstype=xfs \
+  options=noatime,nodiratime \
+  op start interval="0" timeout="60s" \
+  op stop interval="0" timeout="60s" \
+  op monitor interval="20" timeout="40s"
+crm(live)configure# order o_drbd_r0-before-fs_drbd0 \
+  inf: ms_drbd_r0:promote p_fs_drbd0:start
+crm(live)configure# colocation c_fs_drbd0-with_drbd-r0 \
+  inf: p_fs_drbd0 ms_drbd_r0:Master
+crm(live)configure# verify
+crm(live)configure# commit
+crm(live)configure# exit
+# crm_mon
+
+
+######### Configure nfs service and exports
+
+apt-get install nfs-kernel-server -y
+systemctl disable nfs-kernel-server
+
+## Define primitives, order and colocation for nfs
+
+# crm configure
+crm(live)configure# primitive p_nfsserver ocf:heartbeat:nfsserver \
+  params nfs_shared_infodir=/mnt/drbd/nfs_shared_infodir nfs_ip=192.168.10.200 \
+  op start interval=0s timeout=40s \
+  op stop interval=0s timeout=20s \
+  op monitor interval=10s timeout=20s
+crm(live)configure# order o_fs_drbd0-before-nfsserver \
+  inf: p_fs_drbd0 p_nfsserver
+crm(live)configure# colocation c_nfsserver-with-fs_drbd0 \
+  inf: p_nfsserver p_fs_drbd0
+crm(live)configure# verify
+crm(live)configure# commit
+crm(live)configure# exit
+
+
+######### Configure nfs exports and virtual IP resources with order and collocation
+
+
+mkdir /mnt/drbd/export
+chown nobody: /mnt/drbd/export
+
+# crm configure
+crm(live)configure# primitive p_exportfs_dir1 ocf:heartbeat:exportfs \
+  params clientspec=192.168.10.0/24 directory=/mnt/drbd/exports/dir1 fsid=1 \
+  unlock_on_stop=1 options=rw,sync \
+  op start interval=0s timeout=40s \
+  op stop interval=0s timeout=120s \
+  op monitor interval=10s timeout=20s
+crm(live)configure# order o_nfsserver-before-exportfs-dir1 \
+  inf: p_nfsserver p_exportfs_dir1
+crm(live)configure# colocation c_exportfs-with-nfsserver \
+  inf: p_exportfs_dir1 p_nfsserver
+crm(live)configure# verify
+crm(live)configure# commit
+crm(live)configure# exit
+
+
+# crm configure
+crm(live)configure# primitive p_virtip_dir1 ocf:heartbeat:IPaddr2 \
+  params ip=192.168.10.200 cidr_netmask=24 nic=eth0 \
+  op monitor interval=20s timeout=20s \
+  op start interval=0s timeout=20s \
+  op stop interval=0s timeout=20s
+crm(live)configure# order o_exportfs_dir1-before-p_virtip_dir1 \
+  inf: p_exportfs_dir1 p_virtip_dir1
+crm(live)configure# colocation c_virtip_dir1-with-exportfs-dir1 \
+  inf: p_virtip_dir1 p_exportfs_dir1
+crm(live)configure# verify
+crm(live)configure# commit
+crm(live)configure# exit
