@@ -1,0 +1,568 @@
+CCNA - 3
+I. LAN DESIGN
+
+ 1 - All Enterprise networks must:
+  Support crtitical applications
+  Support converged network traffic
+  Support diverse business needs
+  Provide centralized administrative control
+  
+ 2 - Hierarchical Design Model
+  Core Layer (Core routerts/switches along with the EDGE router and/or any firewall devices/services)
+  Distribution Layer (aggregate access layers and provde connectivity to services)
+  Access Layer (provides end users with connectivity usually trough common switches)
+  
+  Two-layer model (Core and distribution are collapsed into one layer to reduce complexity and costs)
+
+ 3 - Ether Channel
+  link aggregation technique which combine multiple Ethernet links into single load-balanced Ether Channel
+  to increase available bandwith.
+  
+ 4 - Failure domain
+  Area of a network that is impacted when a critical device or network service experiences problems 
+  
+ 5 - Power over Ethernet
+  PoE allows the switch to deliver power to a device over the existing Ethernet cabling.
+  
+ 6 - Managment
+  Out-of-band management is used for initial configuration or when a network connection is unavailable
+  In-band management is used to monitor and make configuration changes to a network device over a network connection. 
+  
+  
+II. SCALING VLANs
+
+ 1 - VTP (vlan trunking protocol) - Cisco-proprietary 
+  It reduces administration in a switched network. A switch in VTP server mode can manage additions
+  , deletions and renaming of VLANs across the domain. For example, when a new VLAN is added on the VTP server
+  , the VLAN information is distributed to all switches in the domain.
+  VTP stores VLAN configurations in a database called vlan.dat located in the flash
+  
+ 2 - VTP modes
+  VTP server : 
+  Advertises the VTP domain VLAN information to other VTP-enabled switches in the same VTP domain
+  Stores the VLAN information for the entire domain in NVRAM
+  Creates, deletes, or renames VLANs for the domain
+  Default VTP mode
+  
+  VTP client :
+  Cannot create, change, or delete VLANs
+  Stores the VLAN information for the entire domain in RAM
+  Must be configured as VTP client
+  
+  VTP transparent :
+  Does not participate in VTP except to forward VTP advertisements to VTP clients and VTP server
+  VLANs that are created, renamed, or deleted on transparent switches are local to that switch only
+  Must be configured as VTP transparent
+  
+  VTP includes three types of advertisements:
+  Summary advertisements - These inform adjacent switches of VTP domain name and configuration revision number.
+  Advertisement request - These are in response to a summary advertisement message when the summary advertisement 
+  contains a higher configuration revision number than the current value.
+  Subset advertisements - These contain VLAN information including any changes.
+  
+  By default, Cisco switches issue summary advertisements every five minutes.
+  
+ 3 - CAVEEATS
+  Adding a VTP-enabled switch to an existing VTP domain will wipe out the existing VLAN configurations 
+  in the domain if the new switch is configured with different 
+  VLANs and has a higher configuration revision number than the existing VTP server
+  
+  To reset VTP configuration revision number to zero:
+  Change the switch's VTP domain to a nonexistent 
+  VTP domain and then change the domain back to the original name.
+  
+  Change the switch's VTP mode to transparent and then back to previous VTP mode.
+  
+ 4 - VTP SERVER CONFIG                      DTP Modes
+  show vtp status                    dynamic desirable - active trunking attempts   
+  vtp mode server                    dynamic auto - passive trunking attempts
+  vtp domain DOMAIN_NAME             nonegotiate - disable dtp
+  vtp password PASS
+  
+ 5 - DTP (Dynamic trunking protocol)
+  Cisco proprietary protocol that is automatically enabled on Catalyst 2960 and Catalyst 3560 Series switches.
+  Turn off DTP on interfaces on a Cisco switch connected to devices that do not support DTP to avoid missconfigurations
+  switchport nonegotiate
+  
+  Negotiated Interface Modes
+  
+  switchport mode dynamic auto - The interface becomes a trunk interface if the neighboring interface is set to trunk or desirable mode.
+  The default switchport mode for all Ethernet interfaces is dynamic auto.
+  
+  switchport mode dynamic desirable - Makes the interface actively attempt to convert the link to a trunk link.
+  The interface becomes a trunk interface if the neighboring interface is set to trunk, desirable, or dynamic auto mode.
+  
+  show dtp interface
+  
+III. STP - Spanning tree protocol
+ 
+ 1 - Redundancy problem considerations all caussed by layer 2 loops.
+  MAC Database Instability   
+  Broadcast Storms                  
+  Multiple frame transmission
+ 
+  Spanning Tree Algorithm - STP ensures that there is only one logical path between all destinations on the network 
+  by intentionally blocking redundant paths that could cause a loop
+  
+  Root Bridge - Swtich to all other switched refer for path calculations of the STP instance
+  Election of root bridge - All switches in the broadcast domain participate in the election process. 
+  After a switch boots, it begins to send out BPDU frames every two seconds. 
+  These BPDUs contain the switch BID and the root ID.
+  The switch with the lowest BID will become the root bridge.
+  The default is 32,768. If two or more switches have the same priority, 
+  the switch with the lowest MAC address will become the root bridge.
+  
+  Bridge ID = Priority and MAC Address
+  
+  Best path is choosed as sum of the costs of paths to the root briddge. Cost can be chaanged
+  for interface with interface config mode command - spanning-tree cost COST
+  
+  STP port roles - 
+  Root Port - port which is closest to the root bridge
+  Designated Port - All non-root ports that are still permitted to forward traffic on the network
+  Alternate Port - Alternate ports and backup ports are in discarding or blocking state to prevent loops
+  
+ 2 - Types of Spanning Tree Protocols
+  STP - Legacy Common Spanning Tree 
+  (CST) assumes one spanning tree instance for the entire bridged network, regardless of the number of VLANs. 
+  
+  PVST+ - This is a Cisco enhancement of STP that provides a separate 802.1D spanning tree instance 
+  for each VLAN configured in the network. Port states for PVST
+   Blocking - The port is an alternate port and does not participate in frame forwarding. 
+   Listening - Listens for the path to the root. 
+   STP has determined that the port can participate in frame forwarding according to the BPDU frames that the switch has received
+   Learning - Learns the MAC addresses. 
+   The port prepares to participate in frame forwarding and begins to populate the MAC address table.
+   Forwarding - The port is considered part of the active topology.
+   Disabled - The Layer 2 port does not participate in spanning tree and does not forward frames.
+  
+  RSTP -  This is an evolution of STP that provides faster convergence than STP.
+   Edge Port - An RSTP edge port is a switch port that is never intended to be connected to another switch.
+   Simillar to PortFast on PVST. Configured with int command spanning-tree portfast
+   Link Types - 
+   Point-to-Point - A port operating in full-duplex mode typically connects a switch to a switch
+   Shared - A port operating in half-duplex mode connects a switch to a hub that attaches multiple devices
+  
+  Rapid PVST+ - This is a Cisco enhancement of RSTP that uses PVST+. Rapid PVST+ provides a separate instance of 802.1w per VLAN.
+  
+  MSTP - maps multiple VLANs into the same spanning tree instance.
+  
+ 3 - Switch stacking and spanning-tree
+  A switch stack can consist of up to nine Catalyst 3750 switches connected through their StackWise ports
+  All members are eligible masters. If the master becomes unavailable, 
+  there is an automatic process to elect a new master from the remaining stack members
+  The switch with the highest stack member priority value becomes the master.
+  You can manage the stack through the same IP address even 
+  if you remove the master or any other member from the stack.
+  
+  Commands
+  show spanning-tree detail/summary/vlan ID - show info for spanning-tree
+  spanning-tree VLAN ID root primary/secondary - configure root bridge manually
+  spanning-tree portfast - to configure portfast on interface (int mode command)
+  spanning-tree bpduguard enable  - enable bpdu guard on access port
+  spanning-tree mode - choose the operation mode for stp (rstp, pvst+ , rapid pvst+, mstp)
+  spanning-tree link-type - int command , point-to-point for rapid pvst+
+  clear spanning-tree detected-protocols - clear all detected STP usage for rapid pvst+ config
+  
+
+IV. Ether Channel and HSRP
+  The EtherChannel provides full-duplex bandwidth up to 800 Mb/s (Fast EtherChannel) 
+  or 8 Gb/s (Gigabit EtherChannel) between one switch and another switch or host.
+  All switches in the environment use the default root bridge priority of 32768. 
+  If all switches have the same root bridge priority, the switch with the lowest MAC address will be elected as the root bridge
+  
+  
+ 1 - PAgP (Port Agregation Protocol) 
+   Cisco proprietary protocol
+   In EtherChannel, it is mandatory that all ports have the same speed, duplex setting, and VLAN information.
+   
+   PAgp Modes:
+     On - This mode forces the interface to channel without PAgP. 
+	Interfaces configured in the on mode do not exchange PAgP packets. 
+	 PAgP desirable - This PAgP mode places an interface in an active negotiating state in which 
+	the interface initiates negotiations with other interfaces by sending PAgP packets.
+	 PAgP auto - This PAgP mode places an interface in a passive negotiating state in which the 
+	interface responds to the PAgP packets that it receives, but does not initiate PAgP negotiation.
+     
+	PAgP packets are sent every 30 seconds.
+ 
+ 
+ 2 - LACP (Link Agregation Control Protocol)
+   Open Standart Protocol
+   Originally defined as IEEE 802.3ad
+   LACP allows for eight active links, and also eight standby links. 
+   A standby link will become active should one of the current active links fail.
+   
+   LACP modes:
+     On - This mode forces the interface to channel without LACP. 
+	Interfaces configured in the on mode do not exchange LACP packets.
+	 LACP active - This LACP mode places a port in an active negotiating state. 
+	In this state, the port initiates negotiations with other ports by sending LACP packets.
+	 LACP passive - This LACP mode places a port in a passive negotiating state. 
+	In this state, the port responds to the LACP packets that it receives, but does not initiate LACP packet negotiation.
+	
+  Commands
+  show etherchannel summary/detail
+  show interface port-channel ID
+  interface range ID-ID                                       ## first ceate the ether channel iface
+  channel-group ID mode MODE (active/passive/on/desirable)
+  interface port-channel ID                                    
+  switchport mode trunk/acces                                 ## make the interface config after
+  switchport ....  
+	
+	
+ 3 - HSRP (Hot standby router protocol)
+   Cisco-proprietary
+   By sharing an IP address and a MAC address, two or more routers can act as a single virtual router.
+   The ability of a network to dynamically recover from the failure of a device 
+   acting as a default gateway is known as first-hop redundancy.   
+
+   The router with the highest HSRP priority will become the active router. By default, the HSRP priority is 100. 
+   If the priorities are equal, the router with the numerically highest IPv4 address is elected as the active router.
+   Also this is the default option.
+	
+  Commands
+  show standby /brief
+  standby version 2                                            ## In interface mode
+  standby GROUP-ID ip IP-ADDR                                  ## config virtual IP gr-id 0-10
+  standby GROUP-ID priority VALUE                              ## config priority 0-255 for active router
+  standby G-ID preempt                                         ## Start preemtion process for new active router
+ 
+  Virtual Router Redundancy Protocol version 2 (VRRPv2) - A non-proprietary election protocol
+  Gateway Load Balancing Protocol (GLBP) - Cisco-proprietary FHRP that protects data traffic from a failed router or circuit, 
+  like HSRP and VRRP, while also allowing load balancing
+  
+ 
+V. Dynamic Routing overview
+
+ 1 - Protocol classes
+    Distance vector protocols
+   A router using a distance vector routing protocol does not have the knowledge of the entire path to a destination network
+   Distance vector routing protocols do not have a map of the network topology like other types of routing protocols do.
+   Rip, EIGRP
+   RIP uses the Bellman-Ford algorithm as its routing algorithm.
+   IGRP and EIGRP use the Diffusing Update Algorithm (DUAL) routing algorithm
+ 
+    Link-state protocols
+   Router configured with a link-state routing protocol can create a complete view or topology 
+   of the network by gathering information from all of the other routers. 
+   Link-state routing protocols do not use periodic updates,  a link-state update is only sent when there is a change in the topology.
+   OSPF, IS-IS
+    Link-state process:
+   Each router learns about its own links and its own directly connected networks.
+   Each router is responsible for sending Hello messages to neighbors on directly connected networks
+   Each router builds a Link-State Packet (LSP) containing the state of each directly connected link (LSP - neighbor ID, link type, and bandwidth)
+   Each router floods the LSP to all neighbors. Those neighbors store all LSPs received in a database.
+   Each router uses the database to construct a complete map of the topology 
+   and computes the best path to each destination network
+     
+   
+ 2 - Protocol characteristics
+ 
+   RIPv2 
+   Classless routing protocol - It supports VLSM and CIDR, because it includes the subnet mask in the routing updates.
+   Increased efficiency - It forwards updates to multicast address 224.0.0.9, instead of the broadcast address 255.255.255.255. 
+   Reduced routing entries - It supports manual route summarization on any interface.
+   Secure - It supports an authentication mechanism to secure routing table updates between neighbors. 
+ 
+   EIGRP
+   Bounded triggered updates - It does not send periodic updates. Only routing table changes are propagated
+   Hello keepalive mechanism - A small Hello message is periodically exchanged to maintain adjacencies with neighboring routers.
+   Maintains a topology table - Maintains all the routes received from neighbors (not only the best paths) in a topology table. 
+   DUAL can insert backup routes into the EIGRP topology table   
+   Rapid convergence - In most cases, it is the fastest IGP to converge because it maintains alternate routes, enabling almost instantaneous convergence
+   Multiple network layer protocol support - EIGRP uses Protocol Dependent Modules (PDM), 
+   which means that it is the only protocol to include support for protocols other than IPv4 and IPv6, such as legacy IPX and AppleTalk. 
+ 
+   OSPF
+   Based on  Edsger Dijkstra's shortest path first (SPF) algorithm.
+   This algorithm uses accumulated costs along each path, 
+   from source to destination, to determine the total cost of a route.
+ 
+ 3 - Aditional information missed on test
+   Information such as sequence numbers and aging information is included in an LSP to help manage the flooding process. 
+   This information can assist a router in determining if it has already received the LSP from another router 
+   or if the LSP has newer information than what is already contained in the link-state database.
+ 
+   Link-state protocols have the following disadvantages:
+   Memory Requirements - Creating and maintaining the link-state database and SPF tree.
+   Processing Requirements - The SPF algorithm requires more CPU time than distance vector algorithms because link-state protocols build a complete map of the topology.
+   Bandwidth Requirements - Link-state packet flooding can adversely affect the available bandwidth on a network.
+ 
+ 
+VI. EIGRP (Enchanced Interior Gateway Routing Protocol)
+
+ 1 - EIGRP features
+   Diffusing Update Algorithm
+   Using DUAL, EIGRP stores all available backup routes for destinations so that it can quickly adapt to alternate routes when necessary. 
+ 
+   Establishing Neighbor Adjacencies
+   EIGRP establishes relationships with directly connected routers that are also enabled for EIGRP
+   
+   Reliable Transport Protocol
+   The Reliable Transport Protocol (RTP) is unique to EIGRP and provides delivery of EIGRP packets to neighbors. 
+   RTP and the tracking of neighbor adjacencies set the stage for DUAL
+ 
+   Partial and Bounded Updates
+   EIGRP uses the terms partial and bounded when referring to its updates. 
+   Unlike RIP, EIGRP does not send periodic updates and route entries do not age out.
+   
+   Equal and Unequal Cost Load Balancing
+   EIGRP supports equal cost load balancing and unequal cost load balancing, which allows administrators to better distribute traffic flow in their networks.
+   EIgrp multicast address 224.0.0.10
+ 
+ 
+   Protocol Dependent Modules  (PDMs)
+   PDMs are responsible for the specific routing tasks for each network layer protocol, including:
+   Maintaining the neighbor and topology tables of EIGRP routers that belong to that protocol suite
+   Building and translating protocol-specific packets for DUAL
+   Interfacing DUAL to the protocol-specific routing table
+   Computing the metric and passing this information to DUAL
+   Implementing filtering and access lists
+   Performing redistribution functions to and from other routing protocols
+   Redistributing routes that are learned by other routing protocols
+   
+ 2 - EIGRP packet types
+   Hello packets - Used for neighbor discovery and to maintain neighbor adjacencies.
+   Update packets - Propagates routing information to EIGRP neighbors.
+   Acknowledgment packets - Used to acknowledge the receipt of an EIGRP message that was sent using reliable delivery.
+   Query packets - Used to query routes from neighbors.
+   Reply packets - Sent in response to an EIGRP query.
+   
+ 3 - EIGRP composite metrics (k1, k3)
+   By default, EIGRP uses the following values in its composite metric to calculate the preferred path to a network:
+   Bandwidth - The slowest bandwidth among all of the outgoing interfaces, along the path from source to destination. 
+   Delay - The cumulative (sum) of all interface delay along the path (in tens of microseconds)   
+   
+ 4 - DUAL concepts
+   Successor - neighboring router that is used for packet forwarding and is the least-cost route to the destination network
+   Feasible Distance (FD) - lowest calculated metric to reach the destination network
+   Feasible Successor (FS) - neighbor that has a loop-free backup path to the same network as the successor, and it satisfies the Feasibility Condition
+   Reported Distance (RD)  -  EIGRP neighbor’s feasible distance to the same destination network
+   Feasible Condition (FC) -  neighbor’s Reported Distance (RD) to a network is less than the local router’s feasible distance to the same destination network
+   
+ 
+ 
+   All routes in the topology table should be in the passive state for a stable routing domain. 
+   EIGRP for IPv6 uses a different method to enable an interface for EIGRP. 
+   Instead of using the network router configuration mode command to specify matching interface addresses, EIGRP for IPv6 is configured directly on the interface
+ 
+   Router(config-if)# ipv6 eigrp autonomous-system 
+ 
+   Commands:
+   router eigrp AS(ID)
+   eigrp router-id IP
+   network NET                   # Can be classfull network to enable on our interfaces for clasless net use wild mask
+   passive-interface IFACE       # Can be used to prevent the neighbor adjacencies and receiveing of routing updates.
+   show ip eigrp topology        # Check the EIGRP topology table
+ 
+VII. EIGRP tunning and troubleshooting
+ 1 - EIGRP auto summary
+   Disabled by default from ios 12 onward, typicaly enabled on border or edge routers, can cause some drawbacks.
+   Using the Null0 interface, the packet is discarded if no longer match is found , to prevent routing loops
+   A summary route on R2 for 172.16.0.0/16 to the Null0 interface discards any packets 
+   that begin with 172.16.x.x and that do not have a longer match with any of the subnets: 
+   172.16.1.0/24, 172.16.2.0/24, or 172.16.3.0/24.  
+ 
+ 2 - Propagate Default Router
+   One method of propagating a default static route within the EIGRP routing domain is by using the redistribute static command.
+   This command tells EIGRP to include static routes in its EIGRP updates to other routers.
+   Important symbols:
+   D - This route was learned from an EIGRP routing update.
+   * - The route is a candidate for a default route.
+   EX - The route is an external EIGRP route, in this case a static route outside of the EIGRP routing domain.
+   
+ 3 - EIGRP bandwith utilization
+   By default, EIGRP uses only up to 50 percent of an interface’s bandwidth for EIGRP information. 
+   Use the ip bandwidth-percent eigrp command to configure the percentage of bandwidth that can be used by EIGRP on an interface.    
+   
+ 4 - Hello and Hold Timers
+   EIGRP uses a lightweight Hello protocol to establish and monitor the connection status of its neighbor.
+   The hold time tells the router the maximum time that the router should wait to receive 
+   the next Hello before declaring that neighbor as unreachable.    
+   
+ 5 - Load Balancing
+   Equal-cost load balancing is the ability of a router to distribute outbound traffic using all interfaces   
+   that have the same metric from the destination address. 
+   The show ip protocols command can be used to verify the number of equal-cost paths currently configured on the router.  
+   Unequal-Cost Load Balancing  balance traffic across multiple routes that have different metrics.
+   Setting a value using the variance command in router configuration mode enables EIGRP to install 
+   multiple loop-free routes with unequal cost in a local routing table. 
+   FD (of the FS) <= FD (of the S) * variance  
+   FD – feasible distance
+   FS – feasible successor
+   S – successor
+     
+  Commands:
+  redistribute statuc                                        # Propagate default route
+  ip bandwidth-percent eigrp AS PERCENT                      # configure the percentage of bandwidth that can be used by EIGRP
+  ip hello-interval eigrp AS SEC                             # config Hello interval # per interface
+  ip hold-time eigrp AS SEC
+  maximum-paths value                                        # conf maximum path for equal load balanced
+  variance                                                   # FD (of the FS) <= FD (of the S) * variance  
+  trafﬁc-share balanced                                      # Trafﬁc is then distributed proportionately to the ratio of the costs.
+  
+ 
+VIII. OSPF (Open shortest path first) protocol
+  OSPF version 2 (OSPFv2) is available for IPv4
+  OSPF version 3 (OSPFv3) is available for IPv6. 
+  The SPF algorithm creates an SPF tree by placing each router at the root of the tree and calculating the shortest path to each node.
+  Single-Area OSPF - In Figure 1, all routers are in one area called the backbone area (area 0).
+  Multiarea OSPF - In Figure 2, OSPF is implemented using multiple areas, in a hierarchal fashion. All areas must connect to the backbone area (area 0). 
+  Routers interconnecting the areas are referred to as Area Border Routers (ABRs). 
+  
+  
+ 1 - OSPF features
+   Classless - OSPFv2 is classless by design; therefore, it supports IPv4 VLSM and CIDR.
+   Efficient - Routing changes trigger routing updates (no periodic updates). 
+   It uses the SPF algorithm to choose the best path
+   Fast convergence - It quickly propagates network changes.
+   Scalable - It works well in small and large network sizes. 
+   Routers can be grouped into areas to support a hierarchical system. 
+   Secure - OSPFv2 supports Message Digest 5 (MD5) and Secure Hash Algorithm (SHA) authentication.
+   OSPFv3 uses Internet Protocol Security (IPsec) to add authentication for OSPFv3 packets.
+   
+   OSPFv2 multicast addresses, 224.0.0.5 or 224.0.0.6.
+   
+ 2 - OSPF components
+   Adjacency database - Creates the neighbor table.
+   Link-state database (LSDB) - Creates the topology table. 
+   Forwarding database - Creates the routing table
+   
+ 3 - Link state operation
+   Establish Neighbor Adjacencies - OSPF-enabled routers must recognize each other on the network before they can share information.
+   Exchange Link-State Advertisements - After adjacencies are established, routers then exchange link-state advertisements (LSAs).
+   Build the Topology Table - After LSAs are received, OSPF-enabled routers build the topology table (LSDB) based on the received LSAs.
+   Execute the SPF Algorithm - Routers then execute the SPF algorithm.
+ 
+ 4 - Types of OSPF packets
+   Hello packet - Used to establish and maintain adjacency with other OSPF routers.
+   The default Hello interval on multiaccess networks is 10 seconds. 
+   By default, the router Dead Interval is four times the Hello interval.   
+   Database Description (DBD) packet - Contains an abbreviated list of the sending router’s 
+   LSDB and is used by receiving routers to check against the local LSDB.
+   Link-State Request (LSR) packet - Receiving routers can then request more information about any entry in the DBD by sending an LSR.
+   Link-State Update (LSU) packet - Used to reply to LSRs and to announce new information.
+   Link-State Acknowledgment (LSAck) packet
+ 
+ 5 - OSPF operational states
+   Down State - NO hello packets are received. Interface is down
+   Init State - Hello packets are received from neighbors
+   Two-Way state - On ethernet links DR and BDR are elected     (designated router,backup designated router) 
+   ExStart state - Master/Slave negotiation. Master start DBD packet exchange.
+   Exchange state - Routers exchange DBD packets
+   Loading state - LSRs LSUs are used to gain aditional information.
+   Full state - all routes have converged
+ 
+   Cost = reference bandwith / interface bandwith
+   reference bandwith = 100 000 000  in bps   (100Mb/s)
+ 
+   Diferences between OSPFv2 - OSPFv3
+   Advertise networks -  ipv6 ospf process-id area area-id interface configuration command.
+   
+   Additional information missed on the test.
+   The first preference for an OSPF router ID is an explicitly configured 32-bit address
+   There may be several reasons why two routers running OSPF will fail to form an OSPF adjacency, including these:
+    The subnet masks do not match, causing the routers to be on separate networks.
+    OSPF Hello or Dead Timers do not match.
+    OSPF network types do not match.
+    There is a missing or incorrect OSPF network command.
+   Since serial interfaces do not have MAC addresses, OSPFv3 automatically assigns a link-local address to them derived from the first available 
+   MAC address from the pool of Ethernet interface addresses on the router. 
+   Immediately after two OSPF routers have exchanged hello packets and have formed a neighbor adjacency
+   They exchange abbreviated lists of their LSDBs.
+ 
+ 
+   Commands:
+   router ospf PID 
+   network IP Wild-MASK area NUM
+   router-id ID
+   clear ip ospf process                                   # Reload OSPF process and form new adjacencies
+   passive-interface INT
+   auto-cost reference-bandwidth Mb/s                      # For reference bandwith adjusment
+   ip ospf cost COST                                       # adjust cost per interface
+   show ip ospf database                                   # show the ospf database
+   
+ 
+IX. OSPF multi-area implementation.
+  OSPF single area issues:
+  large routing table
+  large link-state database
+  frequent spf algorithm calculations
+ 
+ LSAs are the building blocks of the OSPF LSDB. Individually, 
+ they act as database records and provide specific OSPF network details.
+ 
+ 1 - OSPF two-layer area hierarchy
+  Backbone (Transit) area - typically area 0 used to connect all other areas
+  Regular (Non-backbone) area - Connects users and resources. 
+  
+ 2 - Types of OSPF routers
+  Internal router - all interfaces in same area
+  Backbone router - routers in the backbone area
+  Area border router - routers that have interfaces in more than 1 area (separate LSDBs for each area )
+  Autonomous system boundary router - router that has at least one interface attached to an external internetwork.
+
+ 3 - Types of LSA messages
+ 
+  type 1 -  routers advertise their directly connected OSPF-enabled links in a type 1 LSA,
+  flooded only within the area in which they originated.  
+ 
+  type 2 - only exists for multiaccess networks, they give other routers information 
+  about multiaccess networks within the same area. Contains the router ID and IP address of the DR
+ 
+  type 3 - used by ABRs to advertise networks from other areas.
+  Receiving a type 3 LSA into an area does not cause a router to run the SPF algorithm.
+  
+  type 4 - Used to advertise the ASBR to other areas and provide path to it 
+  generated by an ABR only when an ASBR exists within an area.
+  
+  type 5 -  describe routes to networks outside the OSPF routing domain. 
+  Type 5 LSAs are originated by the ASBR and are flooded to the entire routing domain.
+ 
+ 4 - OSPF routing table entries
+  O - Router (type 1) and network (type 2) LSAs describe the details within an area. 
+  O IA - Summary LSAs appear in the routing table as IA (interarea routes).
+  O E1/E2 - External LSAs appear in the routing table marked as external type (type 2 is default)
+ 
+ 
+X. OSPF tunning and troubleshooting
+ The router with the highest router id is elected as DR
+ to change or modify the election process use the following commands: 
+ ip ospf priority value    value can be from 0 to 255 (higher value = more priority, interface command)
+ if priorities and IDs are the same highest loopback IPv4 address is choosen
+ 
+ 1 - OSPF network types
+  Point-to-point - Two routers interconnected over a common link. 
+   No other routers are on the link. This is often the configuration in WAN links.
+  Broadcast multiaccess - Multiple routers interconnected over an Ethernet network.
+  Nonbroadcast multiaccess (NBMA) - Multiple routers interconnected in a network that does not allow broadcasts, 
+   such as Frame Relay
+  Point-to-multipoint - Multiple routers interconnected in a hub-and-spoke topology over an NBMA network. 
+   Often used to connect branch sites (spokes) to a central site
+  Virtual links - Special OSPF network used to interconnect distant OSPF areas to the backbone area. 
+   
+ 2- Propagating a Default Static Route in OSPF
+  The default-information originate router configuration mode command. 
+  This instructs R2 to be the source of the default route information and propagate the default static route in OSPF updates 
+   
+ 3 - Modifying OSPFv2 Intervals
+  OSPFv2 Hello and Dead intervals can be modified manually using the following interface configuration mode commands: 
+    ip ospf hello-interval seconds
+    ip ospf dead-interval seconds
+  
+ 4 - Troubleshooting OSPF
+  OSPF problems usually relate to: 
+    Neighbor adjacencies
+	  Another problem that may arise is when two neighboring routers have mismatched MTU sizes on their connecting interfaces.
+	   ip mtu size interface configuration command
+    Missing routes
+    Path selection
+
+  Missed on test
+  On OSPF multiaccess networks, a DR is elected to be the collection and distribution point for LSAs sent and received. A BDR is also elected in case the DR fails. All other non-DR or BDR routers become DROTHER. Instead of flooding LSAs to all routers in the network, DROTHERs only send their LSAs to the DR and BDR using the multicast address 224.0.0.6. 
+  If there is no DR/BDR election, the number of required adjacencies is n(n-1)/2 => 4(4-1)/2 = 6. With the election, this number is reduced to 3.​
+   
+  Only the full and 2way states indicate that a stable adjacency is formed.​ The loading, exstart, and exchange states are transitory states between the 2way and full states. 
+   
+ 

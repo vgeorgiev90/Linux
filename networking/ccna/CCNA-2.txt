@@ -1,0 +1,695 @@
+I. Routing concepts
+  There are many key structures and performance-related characteristics referred to when discussing networks: 
+  Topology, Speed , Cost, Security, Availability, Scalability , Reliability  
+  
+  The router uses its routing table to determine the best path to use to forward a packet. 
+  When the router receives a packet, it examines the destination address of the packet and uses the routing table to search 
+  for the best path to that network. The routing table also includes the interface to be used to forward packets for each known network. 
+  When a match is found, the router encapsulates the packet into the data link frame of the outgoing or exit interface, 
+  and the packet is forwarded toward its destination.
+  
+ 1 - Packet Forwarding Mechanisms
+  Routers support three packet-forwarding mechanisms:
+  Process switching - An older packet forwarding mechanism still available for Cisco routers. 
+  When a packet arrives on an interface, it is forwarded to the control plane where the CPU matches 
+  the destination address with an entry in its routing table, and then determines the exit interface 
+  and forwards the packet.  
+  This process-switching mechanism is very slow and rarely implemented in modern networks.
+  
+  Fast switching - This is a common packet forwarding mechanism which uses a fast-switching cache to store next-hop information. 
+  When a packet arrives on an interface, it is forwarded to the control plane where the CPU searches for a match in the fast-switching cache. 
+  If it is not there, it is process-switched and forwarded to the exit interface. 
+  The flow information for the packet is also stored in the fast-switching cache.
+  
+  Cisco Express Forwarding (CEF) - CEF is the most recent and preferred Cisco IOS packet-forwarding mechanism. 
+  Like fast switching, CEF builds a Forwarding Information Base (FIB), and an adjacency table. However, the table entries are not 
+  packet-triggered like fast switching but change-triggered such as when something changes in the network topology. 
+  Therefore, when a network has converged, the FIB and adjacency tables contain all the information 
+  a router would have to consider when forwarding a packet. 
+  Cisco Express Forwarding is the fastest forwarding mechanism and the preferred choice on Cisco routers.
+  
+ 2 - Configure Basic Router Settings
+  The following configuration tasks should always be performed:
+  Name the device - Change the device hostname
+  Secure management access – Secures privileged EXEC, user EXEC, and remote access.
+  Configure a banner – Provides legal notification of unauthorized access. 
+  
+  To be available, an interface must be:
+  Configured with an IP address and a subnet mask - Use the ip address ip-address subnet-mask interface configuration command.
+  Activated - By default, LAN and WAN interfaces are not activated (shutdown). To enable an interface, it must be activated using the no shutdown command.
+  
+  Optional
+  serial interface connecting to the serial cable end labeled DCE must be configured with the clock rate command.
+  
+  IPv6
+  ipv6 unicast-routing
+  ipv6 address ipv6-address/prefix-length
+  ipv6 address ipv6-address/prefix-length eui-64
+  ipv6 address ipv6-address/prefix-length link-local
+  
+ 3 - Verify Interface Settings
+  show ip interface brief
+  show ip route
+  show running-config  
+  
+  Pipes in commands
+  The filtering parameters that can be configured after the pipe include:
+  section - Shows entire section that starts with the filtering expression
+  include - Includes all output lines that match the filtering expression
+  exclude - Excludes all output lines that match the filtering expression
+  begin - Shows all the output lines from a certain point, starting with the line that matches the filtering expression
+  
+  show history
+  terminal history size SIZE
+  
+  Cisco IOS uses what is known as the administrative distance (AD) to determine the route to install into the IP routing table. 
+  The AD represents the "trustworthiness" of the route; the lower the AD, the more trustworthy the route 
+  
+  IPv4 static routes are configured using the following command:
+  Router(config)# ip route network mask { next-hop-ip | exit-intf }
+  
+  
+II. Static Routing
+  A router can learn about remote networks in one of two ways:
+  Manually - Remote networks are manually entered into the route table using static routes.
+  Dynamically - Remote routes are automatically learned using a dynamic routing protocol.
+  
+ 1 - Static Routing Usage
+  Static routing provides some advantages over dynamic routing, including:
+  Static routes are not advertised over the network, resulting in better security.
+  Static routes use less bandwidth than dynamic routing protocols, no CPU cycles are used to calculate and communicate routes.  
+  The path a static route uses to send data is known.
+  
+  Static routing has the following disadvantages:
+  Initial configuration and maintenance is time-consuming.
+  Configuration is error-prone, especially in large networks.
+  Administrator intervention is required to maintain changing route information.
+  Does not scale well with growing networks; maintenance becomes cumbersome.
+  Requires complete knowledge of the whole network for proper implementation.
+  
+  Static routing has three primary uses:
+  Providing ease of routing table maintenance in smaller networks that are not expected to grow significantly.
+  Routing to and from stub networks. A stub network is a network accessed by a single route, and the router has only one neighbor
+  Using a single default route to represent a path to any network that does not have a more specific match with another route in the routing table.
+  
+ 2 - Types of static routes
+  The following types of IPv4 and IPv6 static routes will be discussed:
+  
+  Standard static route
+  Both IPv4 and IPv6 support the configuration of static routes. 
+  Static routes are useful when connecting to a specific remote network.
+  
+  Default static route
+  A default route is a route that matches all packets and is used by the router if a packet does not match any other, 
+  more specific route in the routing table.
+  
+  Summary static route
+  To reduce the number of routing table entries, multiple static routes can be summarized into a single static route if:
+  The destination networks are contiguous and can be summarized into a single network address.
+  The multiple static routes all use the same exit interface or next-hop IP address.
+  
+  Floating static route
+  Floating static routes are static routes that are used to provide a backup path to a primary static or dynamic route, in the event of a link failure. 
+  The floating static route is only used when the primary route is not available.
+  To accomplish this, the floating static route is configured with a higher administrative distance than the primary route.
+  
+  Route types:
+  Next-hop route - Only the next-hop IP address is specified
+  Directly connected static route - Only the router exit interface is specified
+  Fully specified static route - The next-hop IP address and exit interface are specified
+  
+  AD of the most common routing protocols                     example floating(backup) static route config
+  EIGRP = 90                                                   ip route 0.0.0.0 0.0.0.0 192.168.1.1  5
+  IGRP = 100                                                       CMD       NET           Next-HOP  AD
+  OSPF = 110
+  IS-IS = 115
+  RIP = 120
+  
+  
+III. Dynamic Routing 
+  As networks evolved and became more complex, new routing protocols emerged.
+  The RIP protocol was updated to RIPv2 to accommodate growth in the network environment.
+  However, RIPv2 still does not scale to the larger network implementations of today. 
+  To address the needs of larger networks, two advanced routing protocols were developed: 
+  Open Shortest Path First (OSPF) and Intermediate System-to-Intermediate System (IS-IS).
+  Cisco developed the Interior Gateway Routing Protocol (IGRP) and Enhanced IGRP (EIGRP), 
+  which also scales well in larger network implementations.
+  The Border Gateway Protocol (BGP) is now used between Internet service providers (ISPs).
+  
+ 1 - Dynamic Routing Protocol Components
+  The purpose of dynamic routing protocols includes:
+  Discovery of remote networks
+  Maintaining up-to-date routing information
+  Choosing the best path to destination networks
+  Ability to find a new best path if the current path is no longer available
+  
+  The main components of dynamic routing protocols include:
+  Data structures - Routing protocols typically use tables or databases for its operations. 
+  This information is kept in RAM.
+  
+  Routing protocol messages - Routing protocols use various types of messages to discover neighboring routers, 
+  exchange routing information, and other tasks to learn and maintain accurate information about the network.
+  
+  Algorithm - An algorithm is a finite list of steps used to accomplish a task. Routing protocols use algorithms 
+  for facilitating routing information and for best path determination.
+  
+ 2 - Router RIP Configuration Mode
+  RIP configuration commands:
+  router rip
+  version 2
+  no auto summary
+  network NET  
+  
+  By default, RIP updates are forwarded out all RIP-enabled interfaces. However, RIP updates really only need 
+  to be sent out interfaces that are connected to other RIPenabled routers. 
+  Sending out unneeded updates on a LAN impacts the network in three ways:
+  
+  Wasted Bandwidth - Bandwidth is used to transport unnecessary updates.
+  Because RIP updates are either broadcasted or multicasted, switches also forward the updates out all ports.
+  
+  Wasted Resources - All devices on the LAN must process the update up to the transport layers, at which point the devices will discard the update.
+  
+  Security Risk - Advertising updates on a broadcast network is a security risk. 
+  RIP updates can be intercepted with packet sniffing software.
+  
+  Use the passive-interface router configuration command to prevent the transmission of routing updates through a router interface, 
+  but still allow that network to be advertised to other routers.
+  
+  Propagate a Default Route
+  To propagate a default route in RIP, the edge router must be configured with:
+  A default static route using the ip route 0.0.0.0 0.0.0.0 command.
+  The default-information originate router configuration command.
+  
+ 3 - Routing table terms
+  Routes are discussed in terms of:
+    
+  Ultimate route
+  An ultimate route is a routing table entry that contains either a next-hop IPv4 address or an exit interface. 
+  Directly connected, dynamically learned, and local routes are ultimate routes.
+  
+  Level 1 route
+  A level 1 route is a route with a subnet mask equal to or less than the classful mask of the network address. 
+  Therefore, a level 1 route can be a:
+  Network route - A network route that has a subnet mask equal to that of the classful mask.
+  Supernet route - A supernet route is a network address with a mask less than the classful mask, for example, a summary address.
+  Default route - A default route is a static route with the address 0.0.0.0/0.
+  
+  Level 1 parent route
+  A parent route is a level 1 network route that is subnetted. 
+  A parent route can never be an ultimate route.
+  
+  Level 2 child routes
+  A level 2 child route is a route that is a subnet of a classful network address.
+
+  Routers forward packets to the best route choosen.
+  Best Route = Longest Match
+
+
+IV. Switched Networks
+  
+ 1 - Hierarchy in the Borderless Switched Network
+  Borderless switched network design guidelines are built upon the following principles:
+  Hierarchical - Facilitates understanding the role of each device at every tier, simplifies deployment, 
+  operation, and management, and reduces fault domains at every tier
+  Modularity - Allows seamless network expansion and integrated service enablement on an on-demand basis
+  Resiliency - Satisfies user expectations for keeping the network always on
+  Flexibility - Allows intelligent traffic load sharing by using all network resources
+
+ 2 - Access, Distribution, and Core Layers
+  Access Layer
+  The access layer represents the network edge, where traffic enters or exits the campus network. 
+  Traditionally, the primary function of an access layer switch is to provide network access to the user. 
+  Access layer switches connect to distribution layer switches, which implement network foundation technologies such as 
+  routing, quality of service, and security.
+ 
+  Distribution Layer
+  The distribution layer interfaces between the access layer and the core layer to provide many important functions, including:
+  Aggregating large-scale wiring closet networks
+  Aggregating Layer 2 broadcast domains and Layer 3 routing boundaries
+  Providing intelligent switching, routing, and network access policy functions to access the rest of the network
+  Providing high availability through redundant distribution layer switches to the end-user and equal cost paths to the core
+  Providing differentiated services to various classes of service applications at the edge of the network
+  
+  Core Layer
+  The core layer is the network backbone. It connects several layers of the campus network. 
+  The core layer serves as the aggregator for all of the other campus blocks and ties the campus together with the rest of the network. 
+  The primary purpose of the core layer is to provide fault isolation and high-speed backbone connectivity.
+
+  These options are sometimes referred to as switch form factors.
+  Fixed Configuration Switches
+  Modular Configuration Switches
+  Stackable Configuration Switches
+
+ 3 - Collision Domains
+  In hub-based Ethernet segments, network devices compete for the medium, because devices must take turns when transmitting. 
+  The network segments that share the same bandwidth between devices are known as collision domains.
+  If an Ethernet switch port is operating in half duplex, each segment is in its own collision domain. 
+  However, Ethernet switch ports operating in full duplex eliminate collisions; therefore, there is no collision domain.
+
+  The following are some important characteristics of switches that contribute to alleviating network congestion:
+  High port density - Switches have high-port densities: 24- and 48-port switches are often just a single rack unit
+  Large frame buffers - The ability to store more received frames before having to start dropping them is useful
+  Port speed - Depending on the cost of a switch, it may be possible to support a mixture of speeds. Ports of 100 Mb/s, and 1 or 10 Gb/s are common
+  Fast internal switching - Having fast internal forwarding capabilities allows high performance. The method that is used may be a fast internal 
+  bus or shared memory, which affects the overall performance of the switch.
+  Low per-port cost - Switches provide high-port density at a lower cost.
+
+ 
+V. Switch Configuration
+   
+ 1 - Switch Boot Sequence
+  After a Cisco switch is powered on, it goes through the following boot sequence:
+  1. First, the switch loads a power-on self-test (POST) program stored in ROM. POST checks the CPU subsystem. 
+  It tests the CPU, DRAM, and the portion of the flash device that makes up the flash file system.  
+  2. Next, the switch loads the boot loader software. The boot loader is a small program stored in ROM 
+  that is run immediately after POST successfully completes.
+  3. The boot loader performs low-level CPU initialization. It initializes the CPU registers, 
+  which control where physical memory is mapped, the quantity of memory, and its speed.
+  4. The boot loader initializes the flash file system on the system board.
+  5. Finally, the boot loader locates and loads a default IOS operating system software 
+  image into memory and gives control of the switch over to the IOS.
+ 
+ 2 - Configuring Basic Switch Management Access with IPv4
+  Step 1. Configure Management Interface
+  An IPv4 address and subnet mask is configured on the management SVI of the switch from VLAN interface configuration mode.
+  Step 2. Configure Default Gateway
+  Step 3. Verify Configuration
+  
+  Duplex and Speed
+  Use the duplex interface configuration mode command to manually specify the duplex mode for a switch port. 
+  Use the speed interface configuration mode command to manually specify the speed for a switch port.
+ 
+ 3 - Network Access Layer Issues
+  The reported input errors from the show interfaces command include the following:
+  Runt Frames - Ethernet frames that are shorter than the 64-byte minimum allowed length are called runts. 
+  Malfunctioning NICs are the usual cause of excessive runt frames, but they can also be caused by collisions.
+  Giants - Ethernet frames that are larger than the maximum allowed size are called giants.
+  CRC errors - On Ethernet and serial interfaces, CRC errors usually indicate a media or cable error. 
+  Common causes include electrical interference, loose or damaged connections, or incorrect cabling. 
+  If you see many CRC errors, there is too much noise on the link and you should inspect the cable.
+  Collisions - Collisions in half-duplex operations are normal. 
+  However, you should never see collisions on an interface configured for full-duplex communication.
+  Late collisions - A late collision refers to a collision that occurs after 512 bits of the frame have been transmitted. 
+  Excessive cable lengths are the most common cause of late collisions. Another common cause is duplex misconfiguration.
+ 
+ 4 - Configuring SSH
+  Step 1. Verify SSH support.
+  Use the show ip ssh command to verify that the switch supports SSH
+  Step 2. Configure the IP domain.
+  Configure the IP domain name of the network using the ip domain-name domain-name
+  Step 3. Generate RSA key pairs.
+  Use the crypto key generate rsa global configuration mode command
+  Step 4. Configure user authentication.
+  To use the local authentication method, create a username and password pair using the username username secret password  
+  Step 5. Configure the vty lines.
+  line vty 0 14
+  Enable the SSH protocol on the vty lines using the transport input ssh
+  login local line configuration mode command to require local authentication for SSH 
+  Step 6. Enable SSH version 2.
+  Enable SSH version using the ip ssh version 2 global configuration command.
+  
+  Disable Unused Ports
+  Switch(config)# interface range type module/first-number – last-number
+  shutdown
+  
+ 5 - Port Security
+  Port security limits the number of valid MAC addresses allowed on a port.
+  The type of secure address is based on the configuration and includes:
+  Static secure MAC addresses - MAC addresses that are manually configured on a port by 
+  using the switchport port-security mac-address mac-address  
+  Dynamic secure MAC addresses - MAC addresses that are dynamically learned and stored only in the address table. 
+  MAC addresses configured in this way are removed when the switch restarts.
+  Sticky secure MAC addresses - MAC addresses that can be dynamically learned or manually configured, 
+  then stored in the address table and added to the running configuration.
+  
+  Port Security: Violation Modes
+  Protect - When the number of secure MAC addresses reaches the limit allowed on the port, packets with unknown source addresses are dropped
+  There is no notification that a security violation has occurred.
+  
+  Restrict - When the number of secure MAC addresses reaches the limit allowed on the port, packets with unknown source addresses are dropped
+  In this mode, there is a notification that a security violation has occurred.
+  
+  Shutdown - In this (default) mode, a port security violation causes the interface to immediately become error-disabled and turns off the port LED.
+  it can be brought out of this state by entering the shutdown interface configuration mode command followed by the no shutdown command.
+ 
+  To change the violation mode on a switch port, use the switchport port-security violation {protect | restrict | shutdown}
+  
+  
+VI. VLANs
+  Within a switched network, VLANs provide segmentation and organizational flexibility. 
+  VLANs provide a way to group devices within a LAN. A group of devices within a VLAN communicate as if each device was attached to the same cable. 
+  VLANs are based on logical connections, instead of physical connections.
+  VLANs allow an administrator to segment networks based on factors such as function, project team, or application, without regard for the physical 
+  location of the user or device. Each VLAN is considered a separate logical network. 
+  Devices within a VLAN act as if they are in their own independent network, even if they share a common infrastructure with other VLANs.
+  A VLAN creates a logical broadcast domain that can span multiple physical LAN segments. 
+  
+ 1 - Benefits of VLANs
+  Security, Cost reduction, Better performance, Reduce the size of broadcast domains, Improved IT staff efficiency   
+  Simpler project and application management 
+  
+  Each VLAN in a switched network corresponds to an IP network.
+ 
+ 2 - Types of VLANs
+  Data VLAN
+  A data VLAN is a VLAN that is configured to carry user-generated traffic. 
+  A VLAN carrying voice or management traffic would not be a data VLAN. 
+  It is common practice to separate voice and management traffic from data traffic.  
+  
+  Default VLAN
+  All switch ports become a part of the default VLAN after the initial boot up of a switch loading the default configuration. 
+  Switch ports that participate in the default VLAN are part of the same broadcast domain. 
+  This allows any device connected to any switch port to communicate with other devices on other switch ports. 
+  The default VLAN for Cisco switches is VLAN 1.
+  
+  Native VLAN
+  A native VLAN is assigned to an 802.1Q trunk port. 
+  Trunk ports are the links between switches that support the transmission of traffic associated with more than one VLAN. 
+  An 802.1Q trunk port supports traffic coming from many VLANs (tagged traffic), as well as traffic that does not come from a VLAN 
+  (untagged traffic). Tagged traffic refers to traffic that has a 4-byte tag inserted within the original Ethernet frame header, 
+  specifying the VLAN to which the frame belongs. The 802.1Q trunk port places untagged traffic on the native VLAN, which by default is VLAN 1.
+  
+  Management VLAN
+  A management VLAN is any VLAN configured to access the management capabilities of a switch. 
+  VLAN 1 is the management VLAN by default. To create the management VLAN, the switch virtual interface (SVI) of that VLAN 
+  is assigned an IP address and a subnet mask, allowing the switch to be managed via HTTP, Telnet, SSH, or SNMP.
+  
+  A separate VLAN is needed to support Voice over IP (VoIP). VoIP traffic requires:
+  Assured bandwidth to ensure voice quality
+  Transmission priority over other types of network traffic
+  Ability to be routed around congested areas on the network
+  Delay of less than 150 ms across the network
+  
+ 3 - VLAN Trunks
+  A trunk is a point-to-point link between two network devices that carries more than one VLAN. 
+  A VLAN trunk extends VLANs across an entire network. 
+  Cisco supports IEEE 802.1Q for coordinating trunks on Fast Ethernet, Gigabit Ethernet, and 10-Gigabit Ethernet interfaces. 
+  
+ 4 - VLAN Ranges on Catalyst Switches
+  Normal Range VLANs
+  Identified by a VLAN ID between 1 and 1005.
+  IDs 1 and 1002 to 1005 are automatically created and cannot be removed.
+  Configurations are stored within a VLAN database file, called vlan.dat. 
+  The vlan.dat file is located in the flash memory of the switch.
+  The VLAN Trunking Protocol (VTP), which helps manage VLAN configurations between switches, 
+  can only learn and store normal range VLANs.
+  
+  Extended Range VLANs
+  Enable service providers to extend their infrastructure to a greater number of customers.
+  Are identified by a VLAN ID between 1006 and 4094.
+  Configurations are not written to the vlan.dat file.
+  Support fewer VLAN features than normal range VLANs.
+  Saved, by default, in the running configuration file.
+  VTP does not learn extended range VLANs.
+  
+ 5 - Creating VLANs and assigning ports to VLANs
+  create vlans in global configuration mode
+  vlan VLAN-ID
+  name NAME
+  
+  Assign interfaces:
+  interface TYPE/ID
+  switchport mode access
+  switchport access vlan ID
+  
+  Use the switchport voice vlan vlan-# interface configuration command to assign a voice VLAN to a port.
+  LANs supporting voice traffic typically also have Quality of Service (QoS) enabled.
+  Voice traffic must be labeled as trusted as soon as it enters the network.
+  Use the: mls qos trust[cos | device cisco-phone | dscp | ip-precedence] 
+  interface configuration command to set the trusted state of an interface, and to indicate which fields of the packet are used to classify traffic.
+  
+  Entire vlan.dat file can be deleted using the delete flash:vlan.dat
+  For a Catalyst switch, the erase startup-config command must accompany the delete vlan.dat
+ 
+ 6 - Configuring Trunk Ports
+  interface TYPE-ID
+  switchport mode trunk                ---   required
+  switchport trunk native vlan ID      ---   optional
+  switchport trunk allowed vlan IDs    ---   optional
+  switchport nonegotiate               ---   Disable DTP and auto trunk negotiation
+ 
+ 7 - Inter vlan routing
+  There are three options for inter-VLAN routing:
+  
+  Legacy inter-VLAN routing
+  Historically, the first solution for inter-VLAN routing relied on routers with multiple physical interfaces. 
+  Each interface had to be connected to a separate network and configured with a distinct subnet.
+  
+  Router-on-a-Stick
+  Router-on-a-stick’ is a type of router configuration in which a single physical 
+  interface routes traffic between multiple VLANs on a network.
+  Router subinterfaces:
+  interface gig0/0
+  no ip address
+  interface gig0/0.10
+  encapsulation dot1q VLAN-ID
+  ip address IP MASK
+  
+  Layer 3 switching using SVIs
+ 
+ 
+VII. Access control lists
+  An ACL is a series of IOS commands that control whether a router forwards or drops packets 
+  based on information found in the packet header.
+ 
+  Inbound ACLs - Incoming packets are processed before they are routed to the outbound interface.
+  Outbound ACLs - Incoming packets are routed to the outbound interface, and then they are processed through the outbound ACL.
+  
+  Wildcard mask example
+  mask = 255.255.255.0
+  full-mask = 255.255.255.255
+  wildcard-mask = full-mask - mask = 0.0.0.255
+  
+  Rules for Applying ACLs
+  One ACL per protocol
+  One ACL per direction
+  One ACL per interface
+ 
+ 1 - Where to Place ACLs
+  Extended ACLs - Locate extended ACLs as close as possible to the source of the traffic to be filtered. 
+  Standard ACLs - Because standard ACLs do not specify destination addresses, place them as close to the destination as possible.
+  
+  Numbered Standard IPv4 ACL Syntax
+  Router(config)# access-list access-list-number { deny | permit | remark } source [ source-wildcard ][ log ]  
+  example:
+  R1(config)# access-list 10 permit host 192.168.10.10
+  R1(config)# access-list 10 permit 192.168.10.10 0.0.0.0
+  R1(config)# access-list 10 permit 192.168.10.0 0.0.0.255
+  
+  Named Standard IPv4 ACL Syntax
+  R1(config)#ip access-list [standard | extended] name
+  R1(config-std-nacl)#ID [permit | deny | remark] {source wildcard-mask} [log]
+  example:
+  R1(config)#ip access-list standard test-acl
+  R1(config-std-nacl)#10 permit 192.168.1.0 0.0.0.255
+  R1(config-std-nacl)#15 deny 10.0.0.0 0.0.0.255
+  R1(config-std-nacl)#20 permit host 172.16.1.1
+  
+  Applying ACL to interface
+  Router(config-if)# ip access-group { access-list-number | access-list-name } { in | out }
+  Applying ACL for SSH/Telnet access (vty)
+  access-class { access-list-number | access-list-name } { in | out }
+  
+  During testing of an ACL, the counters can be cleared using the clear access-list counters command.
+  
+  !! At the end of every access list there is Implicit Deny Any !!
+  
+  
+VIII.  DHCP
+  DHCPv4 assigns IPv4 addresses and other network configuration information dynamically. 
+  A dedicated DHCPv4 server is scalable and relatively easy to manage. 
+  However, in a small branch or SOHO location, a Cisco router can be configured to provide DHCPv4 services without the need for a dedicated server.  
+  
+ 1 - DHCPv4 Operation
+  Lease Origination
+  
+  DHCP Discover (DHCPDISCOVER)
+  The DHCPDISCOVER message finds DHCPv4 servers on the network. 
+  Because the client has no valid IPv4 information at bootup, it uses Layer 2 and Layer 3 broadcast addresses to communicate with the server.
+  
+  DHCP Offer (DHCPOFFER)
+  When the DHCPv4 server receives a DHCPDISCOVER message, it reserves an available IPv4 address to lease to the client.
+  The server also creates an ARP entry consisting of the MAC address of the requesting client and the leased IPv4 address of the client.
+  
+  DHCP Request (DHCPREQUEST)
+  When the client receives the DHCPOFFER from the server, it sends back a DHCPREQUEST 
+  This message is used for both lease origination and lease renewal.
+  When used for lease origination, the DHCPREQUEST serves as a binding acceptance notice to the selected server for the parameters 
+  it has offered and an implicit decline to any other servers that may have provided the client a binding offer.
+  
+  DHCP Acknowledgment (DHCPACK)
+  On receiving the DHCPREQUEST message, the server verifies the lease information with an ICMP ping 
+  to that address to ensure it is not being used already, creates a new ARP entry for the client lease, and replies with a DHCPACK 
+  
+  Lease Renewal
+  Before the lease expires, the client sends a DHCPREQUEST message directly to the DHCPv4 server that originally offered the IPv4 address.
+  On receiving the DHCPREQUEST message, the server verifies the lease information by returning a DHCPACK
+ 
+ 2 - Configuring a Basic DHCPv4 Server
+  Step 1. Excluding IPv4 Addresses
+  To exclude specific addresses, use the ip dhcp excluded-address
+  Step 2. Configuring a DHCPv4 Pool
+  The ip dhcp pool pool-name command creates a pool with the specified name and puts the router in DHCPv4 configuration mode
+  Step 3. Configuring Specific Tasks
+  Use the network statement to define the range of available addresses.
+  Use the default-router command to define the default gateway router.
+  DNS server that is available to a DHCPv4 client is configured using the dns-server command.
+  The duration of the DHCPv4 lease can be changed using the lease command.
+  
+  The DHCPv4 service is enabled, by default. To disable the service, use the no service dhcp global configuration mode command. 
+  Use the service dhcp global configuration mode command to re-enable the DHCPv4 server process.
+  DHCPv4 can be verified using the show ip dhcp binding command.
+  
+ 3 - DHCPv4 Relay
+  To forward DHCP broadcast messages to the server (when the dhcp server is not inside the local segment)
+  Interface on the router receiving the broadcast is configured with the ip helper-address interface configuration mode command. 
+  The address of the DHCPv4 server is configured as the only parameter.
+  
+ 4 - DHCPv6 and SLAAC
+  There are two methods in which IPv6 global unicast addresses can be assigned dynamically:
+  
+  Stateless Address Autoconfiguration (SLAAC) 
+  SLAAC is a method in which a device can obtain an IPv6 global unicast address without the services of a DHCPv6 server.
+  At the core of SLAAC is ICMPv6. ICMPv6 is similar to ICMPv4 but includes additional functionality and is a much more robust protocol.
+  SLAAC uses ICMPv6 Router Solicitation and Router Advertisement messages to provide addressing and other configuration information 
+  that would normally be provided by a DHCP server:
+   Router Solicitation (RS) message - When a client is configured to obtain its addressing information automatically using SLAAC, 
+   the client sends an RS message to the router. 
+   The RS message is sent to the IPv6 all-routers multicast address FF02::2.
+   Router Advertisement (RA) message - RA messages are sent by routers to provide addressing information to clients configured 
+   to obtain their IPv6 addresses automatically.
+   The RA message includes the prefix and prefix length of the local segment
+   Example:
+   PC1 receives the RA message containing the prefix and prefix length for the local network. 
+   PC1 will use this information to create its own IPv6 global unicast address. PC1 now has a 64-bit network prefix, 
+   but needs a 64-bit Interface ID (IID) to create a global unicast address.
+   There are two ways PC1 can create its own unique IID:
+   EUI-64 - Using the EUI-64 process, PC1 will create an IID using its 48-bit MAC address.
+   Randomly generated - The 64-bit IID can be a random number generated by the client operating system
+   
+   Dynamic Host Configuration Protocol for IPv6 (Stateful DHCPv6)
+   Configuring a Router as a Stateless DHCPv6 Server
+    Step 1. Enable IPv6 Routing
+    Step 2. Configure a DHCPv6 Pool
+    Step 3. Configure Pool Parameters
+	dns-server DNS
+	domain-name DOMAIN
+	Step 4. Configure the DHCPv6 Interface
+	interface type-number
+	ipv6 dhcp server pool-name
+	ipv6 nd other-config-flag
+
+   Configuring a Router as a Stateful DHCPv6 Server
+	Step 1. Enable IPv6 Routing
+    Step 2. Configure a DHCPv6 Pool
+	Step 3. Configure Pool Parameters
+	address predix prefix/length lifetime infinite
+	Step 4. Interface Commands
+	ipv6 dhcp server pool-name
+	ipv6 nd managed-config-flag
+	
+	
+	
+   The decision of whether a client is configured to obtain its IPv6 address information automatically using SLAAC, DHCPv6, or a 
+   combination of both depends on the settings within the RA message.The decision of whether a client is configured to obtain 
+   its IPv6 address information automatically using SLAAC, DHCPv6, or a combination of both depends on the settings within the RA message.
+   The two flags are the Managed Address Configuration flag (M flag) and the Other Configuration flag (O flag).
+   Using different combinations of the M and O flags, RA messages have one of three addressing options
+   
+   SLAAC (Router Advertisement only)
+   SLAAC is the default option on Cisco routers. Both the M flag and the O flag are set to 0 in the RA
+   To re-enable an interface for SLAAC
+   Router(config-if)# no ipv6 nd managed-config-flag 
+   Router(config-if)# no ipv6 nd other-config-flag 
+   
+   Stateless DHCPv6 (Router Advertisement and DHCPv6)
+   The stateless DHCPv6 option informs the client to use the information in the RA message for addressing, 
+   but additional configuration parameters are available from a DHCPv6 server.
+   For stateless DHCPv6, the O flag is set to 1 and the M flag is left at the default setting of 0
+   To modify the RA message sent on the interface of a router to indicate stateless DHCPv6
+   Router(config-if)# ipv6 nd other-config-flag 
+    
+   Stateful DHCPv6 (DHCPv6 only)
+   RA message informs the client not to use the information in the RA message. 
+   All addressing information and configuration information must be obtained from a stateful DHCPv6 server.
+   The following command is used to change the M flag from 0 to 1 to signify stateful DHCPv6:
+   Router(config-if)# ipv6 nd managed-config-flag 
+ 
+   Configuring the DHCPv6 Relay Agent
+   DHCPv6 relay agent is configured using the ipv6 dhcp relay destination command.
+   The show ipv6 dhcp interface command verifies the interface is in relay mode
+ 
+ 
+IX. NAT for IPv4
+  All public IPv4 addresses that transverse the Internet must be registered with a Regional Internet Registry (RIR).
+  Organizations can lease public addresses from a service provider.
+  The registered holder of a public IP address can assign that address to a network device.  
+  Networks are commonly implemented using private IPv4 addresses, as defined in RFC 1918.
+  10.0.0.0/8
+  172.16.0.0/12
+  192.168.0.0/16
+ 
+  NAT includes four types of addresses:
+  Inside local address
+  Inside global address
+  Outside local address
+  Outside global address
+  
+  Inside address - The address of the device which is being translated by NAT.
+  Outside address - The address of the destination device.
+  Local address - A local address is any address that appears on the inside portion of the network.
+  Global address - A global address is any address that appears on the outside portion of the network.
+ 
+ 1 - Types of NAT
+  There are three types of NAT translation:
+  Static address translation (static NAT) - One-to-one address mapping between local and global addresses.
+  Dynamic address translation (dynamic NAT) - Many-to-many address mapping between local and global addresses. 
+  Port Address Translation (PAT) - Many-to-one address mapping between local and global addresses. This method is also known as overloading (NAT overloading). 
+  
+  Disadvantages of NAT
+  performance is defgraded
+  end-to-end functionality is degraded
+  end-to-end IP traceability is lost
+  tunneling becomes more complex
+  initiating tcp connections can be distrupted
+  
+ 2 - Configuring NAT
+ 
+  Static NAT
+  ip nat inside source static local-ip global-ip
+  interface type-number                ## inside interface (facing the local network)
+  ip nat inside
+  interface type-number                ## outside interface (facing the ISP)
+  ip nat outside
+ 
+  Dynamic NAT
+  ip nat pool name start-ip end-ip netmask MASK             # create nat pool
+  access-list NUMBER permit source wild-mask                # access list for permited private IPs for Native
+  ip nat inside source list ACL pool NAME
+  ip nat inside
+  ip nat outside
+ 
+  PAT (NAT overloading)
+  ip nat pool NAME start-IP end-IP netmask MASK
+  access list NUMBER permit source wild-mask
+  ip nat inside source list ACL pool NAME overload            # overload key word designate NAT overloading
+  ip nat inside source list ACL interface Type-num overload   # configure PAT for single public IP
+  ip nat inside
+  ip nat outside
+ 
+  
+  ip nat inside source static tcp/udp local-ip local-port global-ip global-port extendable
+  # configuration for port forwarding
+ 
+  show ip nat translations
+  show ip nat statistics
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+ 

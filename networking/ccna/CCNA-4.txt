@@ -1,0 +1,898 @@
+I. WAN Concepts (Wide area network)
+ WAN operations focus primarily on the physical layer (OSI Layer 1) and the data link layer (OSI Layer 2). 
+ WAN access standards typically describe both physical layer delivery methods and data link layer requirements. 
+ The data link layer requirements include physical addressing, flow control, and encapsulation.
+ 
+ 1 - WAN topologies
+  Point-to-Point
+   A point-to-point topology, as shown in Figure 1, employs a point-to-point circuit between two endpoints. 
+   Typically involving dedicated leased-line connections like T1/E1 lines, a point-to-point connection involves a 
+   Layer 2 transport service through the service provider network.
+  Hub-and-Spoke
+   With a hub-and-spoke topology a single interface to the hub can be shared by all spoke circuits. 
+   For example, spoke sites can be interconnected through the hub site using virtual circuits and routed subinterfaces at the hub.
+  Full Mesh
+   One of the disadvantages of hub-and-spoke topologies is that all communication has to go through the hub. 
+   With a full mesh topology using virtual circuits, any site can communicate directly with any other site. 
+  Dual-homed Topology
+   A dual-homed topology provides redundancy. 
+   Two hub routers are dual-homed and redundantly attached to three spoke routers across a WAN cloud.
+
+ 2 - WAN terminology
+   Customer Premises Equipment (CPE) - The CPE consists of the devices and inside wiring located on the enterprise edge connecting to a carrier link. 
+   The subscriber either owns the CPE or leases the CPE from the service provider.
+   
+   Data Communications Equipment (DCE) - Also called data circuit-terminating equipment, the DCE consists of devices that put data on the local loop. 
+   The DCE primarily provides an interface to connect subscribers to a communication link on the WAN cloud. 
+   
+   Data Terminal Equipment (DTE) - The customer devices that pass the data from a customer network or host computer for transmission over the WAN. 
+   The DTE connects to the local loop through the DCE.
+   
+   Demarcation Point – This is a point established in a building or complex to separate customer equipment from service provider equipment.
+
+   Local Loop - The actual copper or fiber cable that connects the CPE to the CO of the service provider.
+   
+   Central Office (CO) - The CO is the local service provider facility or building that connects the CPE to the provider network. 
+   
+   Toll network - This consists of the long-haul, all-digital, fiber-optic communications lines, switches, routers, and other equipment inside the WAN provider network. 
+
+ 3 - WAN devices
+   Dialup modem - Voiceband modems are considered to be a legacy WAN technology. A voiceband modem converts (i.e., modulates) the digital signals produced by a computer into voice frequencies. 
+   These frequencies are then transmitted over the analog lines of the public telephone network.
+   
+   Access server – This server controls and coordinates dialup modem, dial-in and dial-out user communications. 
+   Considered to be a legacy technology
+   
+   Broadband modem - A type of digital modem used with high-speed DSL or cable Internet service.
+   
+   CSU/DSU - Digital-leased lines require a CSU and a DSU. 
+   A CSU/DSU can be a separate device like a modem or it can be an interface on a router. 
+   
+   WAN switch - A multiport internetworking device used in service provider networks.
+   
+   Router - Provides internetworking and WAN access interface ports that are used to connect to the service provider network.
+   
+   Core router/Multilayer switch - A router or multilayer switch that resides within the middle or backbone of the WAN, rather than at its periphery.
+   
+ 4 - WAN operations
+   Circuit Switching - A circuit-switched network is one that establishes a dedicated circuit 
+   (or channel) between nodes and terminals before the users may communicate. 
+   The two most common types of circuit-switched WAN technologies are the public switched telephone network (PSTN) 
+   and the Integrated Services Digital Network (ISDN). 
+   
+   Packet Switching - In contrast to circuit switching, packet switching splits traffic data into packets that are routed over a shared network. 
+   Packet-switching networks do not require a circuit to be established, and they allow many pairs of nodes to communicate over the same channel. 
+    Connectionless systems - Full addressing information must be carried in each packet. Each switch must evaluate the address to determine where to send the packet. 
+   An example of a connectionless system is the Internet.
+    Connection-oriented systems - The network predetermines the route for a packet, and each packet only has to carry an identifier. 
+   The switch determines the onward route by looking up the identifier in tables held in memory. 
+   An example of a connection-oriented system is Frame Relay. In the case of Frame Relay, the identifiers used are called data-link connection identifiers (DLCIs).
+
+ 5 - Service Provider Networks
+   They consist mostly of high-bandwidth fiber-optic media, using either the Synchronous Optical Networking (SONET) or Synchronous Digital Hierarchy (SDH) standard. 
+   These standards define how to transfer multiple data, voice, and video traffic over optical fiber using lasers or light-emitting diodes (LEDs) over great distances. 
+   A newer fiber-optic media development for long-range communications is called dense wavelength division multiplexing (DWDM). 
+   DWDM multiplies the amount of bandwidth that a single strand of fiber can support
+   DWDM features:
+    Enables bidirectional communications over one strand of fiber. 
+	Can multiplex more than 80 different channels of data (i.e., wavelengths) onto a single fiber.
+    Each channel is capable of carrying a 10 Gb/s multiplexed signal. 
+    Assigns incoming optical signals to specific wavelengths of light (i.e., frequencies). 
+    Can amplify these wavelengths to boost the signal strength. 
+    Supports SONET and SDH standards.
+        WAN infrastructures model
+	             WAN
+		     /         \
+			/           \
+		 Private	     Public
+		 /     \              \
+		/       \              \
+	Dedicated    Switched       Internet
+	  |            |    \             \
+	  |            |     \             \
+	  |            |      \             \
+	Leased      Circuit    Packet       Broadband
+	Lines       switched   switched        VPN
+	  |            |           |              |
+	  |            |           |              |
+	T1/E1        PSTN        MetroE          DSL
+	T3/E3        ISDN         MPLS          cable
+                           Frame relay      wireless
+						      ATM
+	
+ 6 - Private WAN infrastructures
+   Leased Lines
+   When permanent dedicated connections are required, a point-to-point link is used 
+   to provide a pre-established WAN communications path from the customer premises to the provider network.
+   USA carriers:
+   T1 = 1.544 MB/s
+   T3 = 43.7 MB/s
+   EU carriers:
+   E1 = 2.048 MB/s
+   E3 = 34.368 Mb/s
+   The Layer 2 protocol is usually HDLC or PPP.
+
+   Dialup
+   Dialup WAN access may be required when no other WAN technology is available. 
+   For example, a remote location could use modems and analog dialed telephone lines to provide low capacity and dedicated switched connections. 
+   Dialup access is suitable when intermittent, low-volume data transfers are needed.  
+   The modem modulates the binary data into an analog signal at the source and demodulates the analog signal to binary data at the destination.
+
+   ISDN (Integrated services digital network)
+   Integrated Services Digital Network (ISDN) is a circuit-switching technology 
+   that enables the local loop of a PSTN to carry digital signals, resulting in higher capacity switched connections. 
+   There are two types of ISDN interfaces:
+     Basic Rate Interface (BRI) - ISDN BRI is intended for the home and small enterprise and provides two 64 kb/s bearer channels 
+	 (B) for carrying voice and data and a 16 kb/s delta channel (D) for signaling, call setup and other purposes. 
+ 
+     Primary Rate Interface (PRI) – ISDN is also available for larger installations. 
+	 In North America, PRI delivers 23 B channels with 64 kb/s and one D channel with 64 kb/s for a total bit rate of up to 1.544 Mb/s. 
+	 This includes some additional overhead for synchronization. 
+	 In Europe, Australia, and other parts of the world, ISDN PRI provides 30 B channels and one D channel, for a total bit rate of up to 2.048 Mb/s, 
+	 including synchronization overhead
+	 
+   Frame Relay 
+   Frame Relay is a simple Layer 2 non-broadcast multi-access (NBMA) WAN technology used to interconnect enterprise LANs.
+   Frame Relay creates PVCs which are uniquely identified by a data-link connection identifier (DLCI).
+   PVCs are used to carry both voice and data traffic between a source and destination, and support data rates up to 4 Mb/s, 
+   
+   ATM (Asynchronous transfer mode)
+   Asynchronous Transfer Mode (ATM) technology is capable of transferring voice, video, and data through private and public networks.
+   It is built on a cell-based architecture rather than on a frame-based architecture.
+   ATM cells are always a fixed length of 53 bytes.
+   
+   Ether WAN
+   Ethernet a reasonable WAN access option. For instance, the IEEE 1000BASE-LX standard supports fiber-optic 
+   cable lengths of 5 km, while the IEEE 1000BASE-ZX standard supports cable lengths up to 70 km.
+   The Ethernet WAN service can go by many names, including Metropolitan Ethernet (MetroE), Ethernet over MPLS (EoMPLS), and Virtual Private LAN Service (VPLS).
+
+   MPLS (Multiprotocol label switching)
+   Multiprotocol Label Switching (MPLS) is a multiprotocol high-performance WAN technology that directs data from one router to the next. 
+   MPLS is based on short path labels rather than IP network addresses. 
+   
+   VSAT
+   Very small aperture terminal (VSAT) is a solution that creates a private WAN using satellite communications.
+   
+ 7 - Public WAN infrastructures
+   DSL
+   DSL technology is an always-on connection technology that uses existing twisted-pair telephone lines 
+   to transport high-bandwidth data, and provides IP services to subscribers.
+   Multiple DSL subscriber lines are multiplexed into a single, high-capacity link using a DSL access multiplexer (DSLAM) at the provider location. 
+   DSLAMs incorporate TDM technology to aggregate many subscriber lines into a single medium, generally a T3 (DS3) connection.
+
+   Cable
+   Coaxial cable is widely used in urban areas to distribute television signals.
+   The most important component located at the headend is the cable modem termination system (CMTS), 
+   which sends and receives digital cable modem signals on a cable network and is necessary for providing Internet services to cable subscribers.
+   
+   Wireless
+    Municipal Wi-Fi - Many cities have begun setting up municipal wireless networks. 
+   Some of these networks provide high-speed Internet access for free or for substantially less than the price of other broadband services. 
+    WiMAX - Worldwide Interoperability for Microwave Access (WiMAX) is a new technology that is just beginning to come into use.
+   It is described in the IEEE standard 802.16. WiMAX provides high-speed broadband service with 
+   wireless access and provides broad coverage like a cell phone network rather than through small Wi-Fi hotspots.
+    Satellite Internet - Typically used by rural users where cable and DSL are not available.
+
+   VPN
+   A VPN is an encrypted connection between private networks over a public network, such as the Internet. 
+   Instead of using a dedicated Layer 2 connection, such as a leased line, 
+   a VPN uses virtual connections called VPN tunnels, which are routed through the Internet 
+   from the private network of the company to the remote site or employee host.
+   There are two types of VPN access:
+     Site-to-site VPNs - Site-to-site VPNs connect entire networks to each other; for example, they can connect a branch office network to a company headquarters 
+     Remote-access VPNs - Remote-access VPNs enable individual hosts, such as telecommuters, mobile users, and extranet consumers, to access a company network securely over the Internet.	 
+   
+   
+II. Point-to-point connections
+ HDLC (High-Level Data Link Control) is the default protocol on a Cisco router serial interface. 
+ PPP is a protocol that is able to handle authentication, compression, error detection, monitor link quality, 
+ and logically bundle multiple serial connections together to share the load. 
+
+ 1 - WAN Encapsulation Protocols
+   Leased Line - HDLC, PPP, SLIP
+   Circuit switched - HDLC, PPP, SLIP
+   Packet switched - x.25, Frame relay, ATM
+   
+   HDLC - The default encapsulation type on point-to-point connections, dedicated links, and circuit-switched connections when the link uses two Cisco devices. 
+   HDLC is now the basis for synchronous PPP used by many servers to connect to a WAN, most commonly the Internet.
+   
+   PPP - Provides router-to-router and host-to-network connections over synchronous and asynchronous circuits. PPP works with several network layer protocols, such as IPv4 and IPv6. 
+   PPP is based on the HDLC encapsulation protocol, but also has built-in security mechanisms such as PAP and CHAP. 
+   The only absolute requirement imposed by PPP is a full-duplex 
+   
+   Serial Line Internet Protocol (SLIP) - A standard protocol for point-to-point serial connections using TCP/IP. SLIP has been largely displaced by PPP.
+   
+   X.25/Link Access Procedure, Balanced (LAPB) - An ITU-T standard that defines how connections between a DTE and DCE are maintained for remote terminal access and computer communications in public data networks. 
+   X.25 specifies LAPB, a data link layer protocol. X.25 is a predecessor to Frame Relay.
+   
+   Frame Relay - An industry standard, switched, data link layer protocol that handles multiple virtual circuits. Frame Relay is a next generation protocol after X.25. 
+   Frame Relay eliminates some of the time-consuming processes (such as error correction and flow control) employed in X.25. 
+
+   ATM - The international standard for cell relay in which devices send multiple service types, such as voice, video, or data, in fixed-length (53-byte) cells. 
+   Fixed-length cells allow processing to occur in hardware; thereby, reducing transit delays. 
+   ATM takes advantage of high-speed transmission media such as E3, SONET, and T3.
+  
+ 2 - HDLC encapsulation
+   When frames are transmitted over synchronous or asynchronous links, those links have no mechanism to mark the beginning or end of frames. 
+   For this reason, HDLC uses a frame delimiter, or flag, to mark the beginning and the end of each frame.
+   Cisco has developed an extension to the HLDC protocol to solve the inability to provide multiprotocol support.
+   If the default encapsulation method has been changed, use the encapsulation hdlc command in interface configuration mode to re-enable HDLC. 
+   
+   The show controllers command is another important diagnostic tool when troubleshooting serial lines.
+
+ 3 - PPP encapsulation
+    When there is a need to connect to a non-Cisco router, PPP encapsulation should be used.
+    PPP components:
+	HDLC-like framing for transporting multiprotocol packets over point-to-point links. 
+	Extensible Link Control Protocol (LCP) for establishing, configuring, and testing the data-link connection.
+	Family of Network Control Protocols (NCPs) for establishing and configuring different network layer protocols. 
+	PPP allows the simultaneous use of multiple network layer protocols. The most common NCPs are IPv4 Control Protocol and IPv6 Control Protocol. 
+	
+	Features not included in HDLC:
+	The link quality management feature (LQM) monitors the quality of the link. LQM can be configured with the interface command ppp quality percentage. 
+	If the error percentage falls below the configured threshold, the link is taken down and packets are rerouted or dropped.
+	PPP supports PAP and CHAP authentication.
+	
+	Layered architecture:
+	
+	                     IPv4                  IPv6               Network layer
+						 Network control protocol
+				         
+						 Authentication, Other options
+						   Link control protocol                  Data link layer
+						   
+						Synchronous or asynchronous
+						    physical media                        Physical layer
+							
+    LCP functions within the data link layer and has a role in establishing, configuring, and testing the data-link connection.
+	LCP provides automatic configuration of the interfaces at each end:
+	Handling varying limits on packet size 
+	Detecting common misconfiguration errors 
+	Terminating the link 
+	Determining when a link is functioning properly or when it is failing 
+	After the link is established, PPP also uses LCP to agree automatically on encapsulation formats such as authentication, compression, and error detection.
+	
+	For every network layer protocol used, PPP uses a separate NCP
+	For example, IPv4 uses IP Control Protocol (IPCP) and IPv6 uses IPv6 Control Protocol (IPv6CP).
+	NCPs include functional fields containing standardized codes to indicate the network layer protocol that PPP encapsulates
+	8021 - IPv4
+	8057 - IPv6
+	c023 - PAP
+	c223 - CHAP
+	
+	PPP session establishment
+	1: Link establishment and configuration negotiation - Before PPP exchanges any network layer datagrams, such as IP, the LCP must first open the connection and negotiate configuration options. 
+	This phase is complete when the receiving router sends a configuration-acknowledgment frame back to the router initiating the connection.
+	2: Link quality determination (optional) - The LCP tests the link to determine whether the link quality is sufficient to bring up network layer protocols.
+	3: Network layer protocol configuration negotiation - After the LCP has finished the link quality determination phase, the appropriate NCP can separately 
+	configure the network layer protocols, and bring them up and take them down at any time.
+	
+	LCP operation
+	LCP operation includes provisions for link establishment, link maintenance, and link termination.
+	Link-establishment frames establish and configure a link (Configure-Request, Configure-Ack, Configure-Nak, and Configure-Reject).
+	Link-maintenance frames manage and debug a link (Code-Reject, Protocol-Reject, Echo-Request, Echo-Reply, and Discard-Request).
+	Link-termination frames terminate a link (Terminate-Request and Terminate-Ack).
+	
+	PPP configuration options:
+	Authentication - Peer routers exchange authentication messages. 
+	Two authentication choices are Password Authentication Protocol (PAP) and Challenge Handshake Authentication Protocol (CHAP). 
+	Compression - Increases the effective throughput on PPP connections by reducing the amount of bits that must travel across the link. 
+	The protocol decompresses the frame at its destination. Two compression protocols available in Cisco routers are Stacker and Predictor.
+	Error detection - Identifies fault conditions. The Quality and Magic Number options help ensure a reliable, loop-free data link.
+	PPP Callback - PPP callback is used to enhance security. With this LCP option, a Cisco router can act as a callback client or a callback server. 
+	The client makes the initial call, requests that the server call it back, and terminates its initial call. 
+	The callback router answers the initial call and makes the return call to the client based on its configuration statements.
+	Multilink - This alternative provides load balancing over the router interfaces that PPP uses. Multilink PPP, also referred to as MP, MPPP, MLP, 
+	or Multilink, provides a method for spreading traffic across multiple physical WAN links while providing packet fragmentation and reassembly
+	
+	Commands:
+	encapsulation ppp                                          # interface comm to set ppp encapsulates   (Only for serial interfaces of course...)
+	compress predictor/stack                                   # int command to set compression algorithm   !!!If the traffic already consists of compressed files, such as .zip, .tar, or .mpeg, do not use this option.
+	ppp quality PERCT                                          # set link quality monitoring in percentage
+	show interfaces serial
+	show ppp multilink
+	Multi link configuration:
+	
+	interface Multilink 1 
+	ip address
+	ppp multilink
+	ppp multilink group 1
+	interface s0/0/0
+	no ip address
+	encapsulation ppp
+	ppp multilink
+	ppp multilink group 1
+	interface s0/0/1
+	encapsulation ppp
+	no ip address
+	ppp multilink
+	ppp multilink group 1
+	
+    Authentication
+	PAP is a very basic two-way process. There is no encryption. The username and password are sent in plaintext. 
+	If it is accepted, the connection is allowed. CHAP is more secure than PAP. It involves a three-way exchange of a shared secret. 
+	!!! The hostname on one router must match the username the other router has configured. The passwords must also match. !!!
+	
+	PAP:
+	username USER password PASS
+	interface s0/1/0
+	ip address
+	encapsulation ppp
+	ppp authentication pap
+	ppp pap sent-username USER password PASS
+	
+	CHAP:
+	username USER password PASS
+	interface s0/1/0
+	ip address
+	encapsulation ppp
+	ppp authentication chap
+	
+
+III. Branch connections
+   This chapter covers commonly used broadband solutions, such as cable, DSL, and wireless.
+   Ethernet links do not natively support PPP. A solution to this problem was created, PPP over Ethernet (PPPoE).
+   A VPN is used to create a private communication channel (also called tunnel) over a public network. 
+   Data can be secured by using encryption in this tunnel through the Internet and by using authentication to protect data from unauthorized access. 
+   Generic Routing Encapsulation (GRE) is a tunneling protocol developed by Cisco that can encapsulate a wide variety of protocol packet types inside IP tunnels. 
+   GRE creates a virtual point-to-point link to Cisco routers at remote points, over an IP internetwork.
+
+ 1 - Broadband connections
+   The cable system uses a coaxial cable that carries radio frequency (RF) signals across the network. 
+   Coaxial cable is the primary medium used to build cable TV systems.
+   Cable operators typically deploy hybrid fiber-coaxial (HFC) networks to enable high-speed transmission of data to cable modems located in a SOHO.
+   The Data over Cable Service Interface Specification (DOCSIS) is the international standard for adding high-bandwidth data to an existing cable system.
+
+   Two types of equipment are required to send signals upstream and downstream on a cable system:
+    Cable Modem Termination System (CMTS) at the headend of the cable operator
+	Cable Modem (CM) on the subscriber end
+
+ 2 - DSL connections
+   A Digital Subscriber Line (DSL) is a means of providing high-speed connections over installed copper wires. 
+   DSL is one of the key teleworker solutions available.
+   All forms of DSL service are categorized as ADSL or SDSL, and there are several varieties of each type. 
+   ADSL provides higher downstream bandwidth to the user than upload bandwidth.       (ADSL - asymetric, SDSL - symetric)
+   SDSL provides the same capacity in both directions.   
+  
+   Service providers deploy DSL connections in the local loop. 
+   The connection is set up between a pair of modems on either end of a copper wire that extends between the customer premises equipment 
+   (CPE) and the DSL access multiplexer (DSLAM). 
+   A DSLAM is the device located at the Central Office (CO) of the provider and concentrates connections from multiple DSL subscribers. 
+   DSLAM is often built into an aggregation router.
+   The two important components are the DSL transceiver and the DSLAM:
+   
+   Transceiver - Connects the computer of the teleworker to the DSL. 
+    Usually the transceiver is a DSL modem connected to the computer using a USB or Ethernet cable. 
+	Typically, DSL transceivers are built into small routers with multiple switch ports suitable for home office use.
+   DSLAM - Located at the CO of the carrier, the DSLAM combines individual DSL connections 
+    from users into one high-capacity link to an ISP, and therefore, to the Internet.
+  
+ 3 - Wireless connections
+   Developments in broadband wireless technology are increasing wireless availability through three main technologies:
+
+   Municipal Wi-Fi
+   Many municipal governments, often working with service providers, are deploying wireless networks. 
+   Some of these networks provide high-speed Internet access at no cost or for substantially less than the price of other broadband services. 
+   Other cities reserve their Wi-Fi networks for official use, providing police, fire fighters, 
+   and city workers remote access to the Internet and municipal networks.   
+  
+   Cellular/Mobile
+   Mobile phones use radio waves to communicate through nearby cell towers. 
+   The mobile phone has a small radio antenna. The provider has a much larger antenna that sits at the top of a tower
+   Three common terms that are used when discussing cellular/mobile networks include:
+   Wireless Internet - A general term for Internet services from a mobile phone or from any device that uses the same technology.
+   2G/3G/4G Wireless - Major changes to the mobile phone companies’ wireless networks through the evolution of the second, third, 
+    and fourth generations of wireless mobile technologies.
+   Long-Term Evolution (LTE) - A newer and faster technology considered to be part of 4G technology.
+   
+   Satellite Internet
+   Satellite Internet services are used in locations where land-based Internet access is not available, 
+   or for temporary installations that are mobile. Internet access using satellites is available worldwide, 
+   including for providing Internet access to vessels at sea, airplanes in flight, and vehicles moving on land.
+   
+ 4 - PPP over Ethernet PPPoE
+   The customer’s router is usually connected to a DSL modem using an Ethernet cable. 
+   PPPoE creates a PPP tunnel over an Ethernet connection. This allows PPP frames to be sent across the Ethernet cable to the ISP from the customer’s router. 
+   The modem converts the Ethernet frames to PPP frames by stripping the Ethernet headers. The modem then transmits these PPP frames on the ISP’s DSL network. 
+  
+   PPPoE Configuration
+   1. To create a PPP tunnel, the configuration uses a dialer interface. 
+    A dialer interface is a virtual interface. The PPP configuration is placed on the dialer interface, not the physical interface. 
+	The dialer interface is created using the interface dialer number global configurationcommand. 
+	The client can configure a static IP address, but will more likely be automatically assigned a public IP address by the ISP.
+   2. The PPP CHAP configuration usually defines one-way authentication; therefore, the ISP authenticates the customer. 
+    The hostname and password configured on the customer router must match the hostname and password configured on the ISP router. 
+	The CHAP username and password match the settings on the ISP router.
+   3. The physical Ethernet interface that connects to the DSL modem is then enabled with the command pppoe enable interface configuration command. 
+    This command enables PPPoE and links the physical interface to the dialer interface. 
+	The dialer interface is linked to the Ethernet interface with the dialer pool and pppoe-client interface configuration commands, using the same number. 
+	The dialer interface number does not have to match the dialer pool number.
+  
+   interface dialer 2                                   Verification
+   encapsulation ppp                                    show pppoe session
+   ip address negotiated
+   ppp chap hostname HOST
+   ppp chap password PASS
+   ip mtu 1492
+   dialer pool NUM
+   no shutdown
+   interface GigabithEthernet0/1
+   no ip address
+   pppoe enable
+   pppoe client dial-pool-number 1
+   no shutdown
+	
+   After ensuring that the client router and DSL modem are connected with the proper cables, one or more of the following reasons is 
+   usually the cause of a PPPoE connection not functioning properly:
+   Failure in the PPP negotiation process
+   Failure in the PPP authentication process
+   Failure to adjust the TCP maximum segment size
+	
+   There are four main points of failure in a PPP negotiation:
+   No response from the remote device (the ISP)
+   Link Control Protocol (LCP) not open
+   Authentication failure
+   IP Control Protocol (IPCP) failure
+	
+   The ip tcp adjust-mss max-segment-size interface command helps prevent TCP sessions from being dropped by adjusting the MSS value during the TCP 3-way handshake. 
+   In most cases, the optimum value for the max-segment-size argument is 1452 bytes.
+	
+ 5 - VPN tunnels
+   A VPN is a private network created via tunneling over a public network, usually the Internet. 
+   VPN is a communications environment in which access is strictly controlled to permit peer connections within a defined community of interest. 
+   To implement VPNs, a VPN gateway is necessary. The VPN gateway could be a router, a firewall, or a Cisco Adaptive Security Appliance (ASA).
+   An ASA is a standalone firewall device that combines firewall, VPN concentrator, and intrusion prevention functionality into one software image.
+  
+   Site-to-Site VPNs
+   In a site-to-site VPN, end hosts send and receive normal TCP/IP traffic through a VPN “gateway”. 
+   The VPN gateway is responsible for encapsulating and encrypting outbound traffic for all traffic from a particular site. 
+   The VPN gateway then sends it through a VPN tunnel over the Internet to a peer VPN gateway at the target site. 
+   Upon receipt, the peer VPN gateway strips the headers, decrypts the content, and relays the packet toward the target host inside its private network.
+  
+   Remote Access VPNs
+   A remote-access VPN is created when VPN information is not statically set up, but instead allows for dynamically changing information, and can be enabled and disabled. 
+   Remote-access VPNs support a client/server architecture, where the VPN client (remote host) gains secure access to the enterprise network 
+   via a VPN server device at the network edge
+  
+   DMVPN
+   Dynamic Multipoint VPN (DMVPN) is a Cisco software solution for building multiple VPNs in an easy, dynamic, and scalable manner. 
+   The goal is to simplify the configuration while easily and flexibly connecting central office sites with branch sites.
+   DMVPN is built using the following technologies:
+   Next Hop Resolution Protocol (NHRP)
+    NHRP is a Layer 2 resolution and caching protocol similar to Address Resolution Protocol (ARP). 
+	NHRP creates a distributed mapping database of public IP addresses for all tunnel spokes. 
+	NHRP is a client server protocol consisting of the NHRP hub known as the Next Hop Server (NHS), and the NHRP spokes known as the Next Hop Clients (NHCs).
+   Multipoint Generic Routing Encapsulation (mGRE) tunnels
+    An mGRE tunnel interface allows a single GRE interface to support multiple IPsec tunnels. 
+	With mGRE, dynamically allocated tunnels are created through a permanent tunnel source at the hub and dynamically allocated tunnel destinations, 
+	created as necessary, at the spokes. This reduces the size and simplifies the complexity of the configuration.
+   IP Security (IPsec) encryption
+  
+ 6 - Generic Routing Encapsulation (GRE)
+   GRE is a tunneling protocol developed by Cisco that can encapsulate a wide variety of protocol packet types inside IP tunnels. 
+   GRE creates a virtual point-to-point link to Cisco routers at remote points, over an IP internetwork. 
+   Protocol Types are defined in RFC 1700 as "EtherTypes".
+   
+   Configure GRE
+   Step 1. Create a tunnel interface using the interface tunnel number command.
+   Step 2. Configure an IP address for the tunnel interface. This is normally a private IP address.
+   Step 3. Specify the tunnel source IP address.
+   Step 4. Specify the tunnel destination IP address.
+   Step 5. (Optional) Specify GRE tunnel mode as the tunnel interface mode. GRE tunnel mode is the default tunnel interface mode for Cisco IOS software.
+   
+   interface Tunnel1
+   tunnel mode gre ip
+   ip address IP MASK                                                       # IP for the tunnel interface
+   tunnel source IP
+   tunnel destination IP
+   Optional:                                                                # include the tunnel iface in the routing protocols
+   router ospf 1
+   network IP MASK area 0                                                   
+  
+   However, GRE does not provide encryption or any other security mechanisms. 
+   Therefore, data sent across a GRE tunnel is not secure. If secure data communication is needed, IPsec or SSL VPNs should be configured.
+  
+ 7 - EGP routing protocol
+   Border Gateway Protocol (BGP) is an Exterior Gateway Protocol (EGP) used for the exchange of routing information between autonomous systems, 
+   such as ISPs, companies, and content providers
+   In BGP, every AS is assigned a unique 16-bit or 32-bit AS number which uniquely identifies it on the Internet.    
+   BGP does not use a single metric like IGPs. BGP routers exchange several path attributes including a list of AS numbers (hop by hop) 
+   necessary to reach a destination network.
+   BGP updates are encapsulated over TCP on port 179.
+  
+   eBGP and iBGP
+   External BGP (eBGP) – External BGP is the routing protocol used between routers in different autonomous systems.
+   Internal BGP (iBGP) - Internal BGP is the routing protocol used between routers in the same AS.
+   
+   There are three common ways an organization can choose to implement BGP in a multi-homed environment:
+   Default Route Only
+   ISPs advertise a default route only
+   Default Route and ISP Routes
+   ISPs advertise their default route and their network
+   All Internet Routes
+   ISPs advertise all Internet routes
+   
+   BGP Configuration:
+   The router bgp as-number global configuration command enables BGP and identifies the AS number
+   The neighbor ip-address remote-as as-number router configuration command identifies the BGP peer and its AS number.
+   The network network-address mask network-mask router configuration command enters the network-address into the local BGP table. 
+   The BGP table contains all routes learned via BGP or advertised using BGP.
+  
+   router bgp 65000
+   neighbor 200.200.100.100 remote-as 65001
+   network 192.168.1.0 mask 255.255.255.0
+   show ip bgp/summary                                        # verify bgp configuration
+   
+  
+IV. Access Control Lists
+  ACLs can be configured to apply to inbound traffic and outbound traffic
+  The last statement of an ACL is always an implicit deny.
+  This statement is automatically inserted at the end of each ACL even though it is not visible in show command output.
+  One ACL per protocol - To control traffic flow on an interface, an ACL must be defined for each protocol enabled on the interface.
+  ACL rules:
+  One ACL per direction - ACLs control traffic in one direction at a time on an interface. Two separate ACLs must be created to control inbound and outbound traffic.
+  One ACL per interface - ACLs control traffic for an interface, for example, GigabitEthernet 0/0.
+  
+ 1 - Standard and Extended IPv4 ACLs
+  Standard ACLs can be used to permit or deny traffic only from source IPv4 addresses.
+  Example: access-list 10 permit 10.1.1.0 0.0.0.255
+  
+  Extended ACLs filter IPv4 packets based on several attributes:  
+   Protocol type
+   Source IPv4 address
+   Destination IPv4 address
+   Source TCP or UDP ports
+   Destination TCP or UDP ports
+   Optional protocol type information for finer control
+   
+   Example: access-list 103 permit tcp 10.1.1.0 0.0.0.255 any eq 80
+   
+  Standard and extended ACLs can be created using either a number or a name to identify the ACL and its list of statements.
+  Numbered ACL
+  1 to 99 and 1300 to 1999 - Standard IP ACL
+  100 to 199 and 2000 to 2699 - Extended IP ACL
+  
+  Named ACL
+  Names can not contain spaces and punctoation
+  Entries can be inserted and deleted from the ACL
+  
+  Where to Place ACLs
+  Extended ACLs - Locate extended ACLs as close as possible to the source of the traffic to be filtered. 
+  This way, undesirable traffic is denied close to the source network without crossing the network infrastructure.
+  
+  Standard ACLs - Because standard ACLs do not specify destination addresses, place them as close to the destination
+  as possible. If a standard ACL was placed at the source of the traffic, the "permit" or "deny" will occur 
+  based on the given source address no matter where the traffic is destined.
+  
+  Configure a Standard IPv4 ACL
+  R1(config)# access-list 10 permit host 192.168.10.10 
+  Router(config-if)# ip access-group { access-list-number | access-list-name } { in | out } 
+ 
+  Named Standard IPv4 ACLs
+  ip access-list standard NAME 
+  permit/deny source wild-mask
+  interface mode
+  ip access-group NAME in/out
+  
+ 2 - IPv6 ACL
+  With IPv6, there is only one type of ACL, which is equivalent to an IPv4 extended named ACL. There are no numbered ACLs in IPv6.
+  An IPv4 ACL and an IPv6 ACL cannot share the same name. 
+  Comparing IPv4 and IPv6 ACLs
+  The first difference is the command used to apply an IPv6 ACL to an interface. 
+  IPv4 uses the command ip access-group to apply an IPv4 ACL to an IPv4 interface. 
+  IPv6 uses the ipv6 traffic-filter command to perform the same function for IPv6 interfaces. 
+  Unlike IPv4 ACLs, IPv6 ACLs do not use wildcard masks. Instead, the prefix-length is used to indicate 
+  how much of an IPv6 source or destination address should be matched.
+  The last major difference has to with the addition of two implicit permit statements at the end of each IPv6 access list. 
+  At the end of every IPv4 standard or extended ACL is an implicit deny any or deny ip any any. 
+  IPv6 includes a similar deny ipv6 any any statement at the end of each IPv6 ACL. 
+  The difference is IPv6 also includes two other implicit statements by default: permit icmp any any nd-na and permit icmp any any nd-ns.
+  
+  These two statements allow the router to participate in the IPv6 equivalent of ARP for IPv4. 
+  Recall that ARP is used in IPv4 to resolve Layer 3 addresses to Layer 2 MAC addresses. 
+  IPv6 uses ICMP Neighbor Discovery (ND) messages to accomplish the same thing. 
+  ND uses Neighbor Solicitation (NS) and Neighbor Advertisement (NA) messages. 
+  
+  
+V. Network security and monitoring
+  Common Layer 2 attacks include CDP reconnaissance, Telnet exploitation, MAC address table flooding, VLAN attacks, and DHCP related attacks.
+  
+ 1 - Layer 2 most common attacks
+  CDP Reconnaissance Attack
+   CDP broadcasts are sent unencrypted and unauthenticated. 
+   Therefore, an attacker could interfere with the network infrastructure by sending crafted CDP frames 
+   containing bogus device information to directly-connected Cisco devices. 
+   To disable CDP globally on a device, use the no cdp run global configuration mode command. 
+   To enable CDP globally, use the cdp run global configuration command. 
+   To disable CDP on a port, use the no cdp enable interface configuration command. 
+   To enable CDP on a port, use the cdp enable interface configuration command.
+  Telnet Attacks
+   There are two types of Telnet attacks:
+   Brute Force Password Attack - The attacker may use a list of common passwords, dictionary words, and variations of words to discover the administrative password.
+   Telnet DoS Attack - The attacker continuously requests Telnet connections in an attempt to render the Telnet service unavailable 
+   and preventing an administrator from remotely accessing a switch.
+  MAC Address Table Flooding Attack
+   MAC address table becomes full of fake MAC addresses and enters into what is known as fail-open mode. 
+   In this mode, the switch broadcasts all frames to all machines on the network. 
+  VLAN Attacks
+   There are several ways to mitigate VLAN attacks:
+   Explicitly configure access links
+   Explicitly disable auto trunking
+   Manually enable trunk links
+   Disable unused ports, make them access ports, and assign them to a black hole VLAN
+   Change the default native VLAN 
+   Implement port security
+  DHCP Attacks
+   DHCP spoofing attack - An attacker configures a fake DHCP server on the network to issue IP addresses to clients. 
+   This type of attack forces the clients to use both a false Domain Name System (DNS) server 
+   and a computer which is under the control of the attacker as their default gateway.
+   DHCP starvation attack - An attacker floods the DHCP server with bogus DHCP requests and eventually leases all of the available 
+   IP addresses in the DHCP server pool. 
+   After these IP addresses are issued, the server cannot issue any more addresses, 
+   and this situation produces a denial-of-service (DoS) attack as new clients cannot obtain network access. 
+  
+ 2 - Secure the LAN
+
+  Mitigate MAC Address Flooding Table Attacks
+  The simplest and most effective method to prevent MAC table flooding attacks is to enable port security.   
+  
+  Mitigate VLAN Attacks
+  Disable DTP (auto trunking) negotiations on non-trunking ports and explicitly force the access ports by using 
+  the switchport mode access interface configuration command..
+  Manually enable the trunk link on a trunking port using the switchport mode trunk interface configuration command.
+  Disable DTP (auto trunking) negotiations on trunking and non-trunking ports using the switchport nonegotiate interface configuration command. 
+  Set the native VLAN to be something other than VLAN 1. Set it on an unused VLAN using the switchport trunk native vlan vlan_number interface configuration mode command.
+  Disable unused ports and assign them to an unused VLAN.
+  
+  Mitigate DHCP Attacks
+  Security best practices recommend using DHCP snooping to mitigate DHCP spoofing attacks. 
+  DHCP snooping recognizes two types of ports:
+  Trusted DHCP ports - Only ports connecting to upstream DHCP servers should be trusted. 
+  These ports should lead to legitimate DHCP servers replying with DHCP Offer and DHCP Ack messages. 
+  Trusted ports must be explicitly identified in the configuration.
+  Untrusted ports - These ports connect to hosts that should not be providing DHCP server messages. 
+  By default, all switch ports are untrusted.
+  
+  Secure Administrative Access using AAA
+  The Authentication, Authorization, and Accounting (AAA) framework is used to help secure device access.
+  Cisco provides two common methods of implementing AAA services:
+  Local AAA Authentication - Local AAA uses a local database for authentication. 
+  This method is sometimes known as self-contained authentication. 
+  This method stores usernames and passwords locally in the Cisco router, and users authenticate against 
+  the local database. Local AAA is ideal for small networks. 
+  Server-Based AAA Authentication - Server-based AAA authentication is a much more scalable solution. 
+  With server-based method, the router accesses a central AAA server. 
+  The AAA server contains the usernames and password for all users and serves as a central authentication system 
+  for all infrastructure devices.
+  
+  Secure Device Access using 802.1X
+  The IEEE 802.1X standard defines a port-based access control and authentication protocol. 
+  IEEE 802.1X restricts unauthorized workstations from connecting to a LAN through publicly accessible switch ports. The authentication server authenticates each workstation that is connected to a switch port before making available any services offered by the switch or the LAN.
+  
+  With 802.1X port-based authentication, the devices in the network have specific roles, as shown in the figure:
+  
+  Client (Supplicant) - This is usually the 802.1X-enabled port on the device. 
+  The device requests access to LAN and switch services and then responds to requests from the switch.  
+  Another client supplicant is the 802.1X-compliant wireless device such as a laptop or tablet.
+  
+  Switch (Authenticator) – This controls physical access to the network based on the authentication status of the client. 
+  The switch acts as an intermediary (proxy) between the client and the authentication server. 
+  It requests identifying information from the client, verifies that information with the authentication server, 
+  and relays a response to the client. The switch uses a RADIUS software agent, 
+  which is responsible for encapsulating and de-encapsulating the EAP (Extensible Authentication Protocol) 
+  frames and interacting with the authentication server. 
+  Another device that could act as authenticator is a wireless access point acting as the intermediary 
+  between the wireless client and the authentication server.
+  
+  Authentication server – This performs the actual authentication of the client. 
+  The authentication server validates the identity of the client and notifies the switch or other authenticator 
+  such as a wireless access point whether the client is authorized to access the LAN and switch services. 
+  Because the switch acts as the proxy, the authentication service is transparent to the client. 
+  The RADIUS security system with EAP extensions is the only supported authentication server.
+  
+ 3 - Introduction to SNMP
+  SNMP is an application layer protocol that provides a message format for communication between managers and agents. 
+  The SNMP system consists of three elements: 
+  SNMP manager 
+  SNMP agents (managed node)
+  Management Information Base (MIB) 
+  
+  SNMP defines how management information is exchanged between network management applications and management agents. 
+  The SNMP manager polls the agents and queries the MIB for SNMP agents on UDP port 161. 
+  SNMP agents send any SNMP traps to the SNMP manager on UDP port 162.
+  
+  SNMP agents that reside on managed devices collect and store information about the device and its operation. 
+  This information is stored by the agent locally in the MIB. 
+  The SNMP manager then uses the SNMP agent to access information within the MIB.
+  
+  SNMPv1 and SNMPv2c
+  Community Strings
+  There are two types of community strings: 
+  Read-only (ro) - Provides access to the MIB variables, but does not allow these variables to be changed, only read. 
+  Because security is minimal in version 2c, many organizations use SNMPv2c in read-only mode. 
+  Read-write (rw) - Provides read and write access to all objects in the MIB.
+  
+  Management Information Base Object ID
+  MIB variables enable the management software to monitor and control the network device.
+  Formally, the MIB defines each variable as an object ID (OID).
+  
+  SNMPv3
+  SNMPv3 authenticates and encrypts packets over the network to provide secure access to devices.
+  This addressed the vulnerabilities of earlier versions of SNMP.
+  SNMPv3 provides three security features:
+  Message integrity and authentication - Transmissions from the SNMP manager (NMS) to agents (managed nodes) 
+  can be authenticated to guarantee the identity of the sender and the integrity and timeliness of a message. 
+  This ensures that a packet has not been tampered with in transit, and is from a valid source.
+  Encryption - SNMPv3 messages may be encrypted to ensure privacy. 
+  Encryption scrambles the contents of a packet to prevent it from being seen by an unauthorized source.
+  Access control - Restricts SNMP managers to certain actions on specific portions of data. 
+  For example, you may not want the NMS to have full access to your firewall device.
+ 
+ 4 - Steps for Configuring SNMP
+  Step 1. (Required) Configure the community string and access level (read-only or read-write) with the snmp-server community string ro | rw command.
+  Step 2. (Optional) Document the location of the device using the snmp-server location text command.
+  Step 3. (Optional) Document the system contact using the snmp-server contact text command.
+  Step 4. (Optional) Restrict SNMP access to NMS hosts (SNMP managers) that are permitted by an ACL: 
+  define the ACL and then reference the ACL with the snmp-server community string access-list-number-or-name command. 
+  This command can be used both to specify a community string and to restrict SNMP access via ACLs.
+  Step 5. (Optional) Specify the recipient of the SNMP trap operations with the snmp-server hosthost-id [version {1| 2c | 3 [auth | noauth | priv]}] community-string command.
+  Step 6. (Optional) Enable traps on an SNMP agent with the snmp-server enable traps notification-types command. 
+  If no trap notification types are specified in this command, then all trap types are sent. 
+  Repeated use of this command is required if a particular subset of trap types is desired.
+ 
+  Example
+  snmp-server community viktor123 ro SNMP_ACL                             show snmp
+  snmp-server location LOCATION                                           show snmp community
+  snmp-server contact VIKTOR
+  snmp-server host 192.168.1.1 version 2c viktor123
+  snmp-server enable traps
+  ip access-list standart SNMP_ACL
+  permit host 192.168.1.3
+  
+  SNMPv3 Configuration example
+  ip access-list standart SNMP-v3
+  permit 192.168.1.0 0.0.0.255
+  snmp-server view SNMP-RO iso included
+  snmp-server group ADMIN v3 priv read SNMP-RO access SNMP-v3
+  snmp-server user viktor ADMIN v3 auth sha parolata123 priv aes 128 parolata2
+
+
+  The Switched Port Analyzer (SPAN) feature on Cisco switches is a type of port mirroring that sends copies of the frame entering a port, out another port on the same switch.
+  SPAN config
+  monitor session 1 source interface IFACE
+  monitor session 1 destination interface IFACE
+  show monitor
+
+
+VI. Quality of Service
+  Quality of Service (QoS) tools can be designed into the network to guarantee that certain traffic types, 
+  such as voice and video, are prioritized over traffic that is not as time-sensitive, such as email and web browsing.
+  Congestion occurs when multiple communication lines aggregate onto a single device such as a router, and then much of that data 
+  is placed on fewer outbound interfaces, or onto a slower interface. 
+  Congestion can also occur when large data packets prevent smaller packets from being transmitted in a timely manner.
+  When the volume of traffic is greater than what can be transported across the network, devices queue, or hold, the packets in memory 
+  until resources become available to transmit them.
+  Jitter is the variation in the delay of received packets.
+
+ 1 - Traffic Characteristics
+  
+  Voice
+  Cisco products use the RTP (Real time protocol) port range 16384 to 32767 to prioritize voice traffic. 
+  Voice can tolerate a certain amount of latency, jitter, and loss without any noticeable effects. 
+  Latency should be no more than 150 milliseconds (ms). 
+  Jitter should be no more than 30 ms, and voice packet loss should be no more than 1%. 
+  Voice traffic requires at least 30 Kbps of bandwidth.
+
+  Video
+  UDP ports, such as 554 used for the Real-Time Streaming Protocol (RSTP), 
+  should be given priority over other, less time-sensitive, network traffic.
+  Latency should be no more than 400 milliseconds (ms). Jitter should be no more than 50 ms, 
+  and video packet loss should be no more than 1%. Video traffic requires at least 384 Kbps of bandwidth.
+
+ 2 - Queuing Overview
+  Queuing is a congestion management tool that can buffer, prioritize, and, if required, reorder packets before being transmitted to the destination.
+  A number of queuing algorithms are available.
+  
+  First-In, First-Out (FIFO)
+  fastest method of queuing
+  In its simplest form, FIFO queuing, also known as first-come, first-served (FCFS) queuing, 
+  involves buffering and forwarding of packets in the order of arrival.
+  Packets are sent out an interface in the order in which they arrive
+  When no other queuing strategies are configured, all interfaces except serial interfaces at E1 (2.048 Mbps) 
+  and below use FIFO by default. (Serial interfaces at E1 and below use WFQ by default.)
+  
+  Weighted Fair Queuing (WFQ)
+  WFQ is an automated scheduling method that provides fair bandwidth allocation to all network traffic. 
+  WFQ applies priority, or weights, to identified traffic and classifies it into flows
+  WFQ classifies traffic into different flows based on packet header addressing, including such characteristics 
+  as source and destination IP addresses, MAC addresses, port numbers, protocol, 
+  and Type of Service (ToS) value ,not supported with tunneling and encryption
+  
+  Class-Based Weighted Fair Queuing (CBWFQ)
+  CBWFQ extends the standard WFQ functionality to provide support for user-defined traffic classes.
+  For CBWFQ, you define traffic classes based on match criteria including protocols, access control lists (ACLs), and input interfaces. 
+  A FIFO queue is reserved for each class, and traffic belonging to a class is directed to the queue for that class
+   
+  Low Latency Queuing (LLQ)
+  The LLQ feature brings strict priority queuing (PQ) to CBWFQ. 
+  Strict PQ allows delay-sensitive data such as voice to be sent before packets in other queues.
+  With LLQ, delay-sensitive data is sent first, before packets in other queues are treated.
+  
+ 3 - Policy models
+  The three models for implementing QoS are:
+  
+  Best-effort model
+  benefits:
+  The most scalable model, scalability is only limited by bandwith limits, in which case all traffic is equally affected
+  No special QoS mechanisms are required, easiest and quickest model to deploy
+  drawbacks:
+  No guarantees of delivery
+  packets will arrive whenever the can and in any order possible
+  No packets have preferential treatment
+  Critical data is treated the same as casual data.
+
+  Integrated services (IntServ)
+  Provide high QoS ,it defines a signaling process for applications to signal to the network that they require
+  special QoS for a period and that bandwith should be reserved
+  Can severely limit the scalability of a network.
+  IntServ uses the Resource Reservation Protocol (RSVP) to signal the QoS needs of an application’s traffic along devices 
+  in the end-to-end path through the network.  
+  benefits:
+  Explicit end to end resource admission control
+  per-request policy admission control
+  signaling of dynamic port numbers
+  drawbacks:
+  resource intensive due to the statefull architecture for continious signaling
+  flow-based approach not scalable to large implementations
+  
+  Differentiated services (DiffServ)
+  Provide high scalability and flexibility in implementing QoS
+  Network devices recognize traffic classes and provide different levels of QoS to different traffic classes.
+  benefits:
+  Highly scalable
+  PRovides many different levels of quality
+  drawbacks:
+  No absolute guarantee of service quality
+  Requires a set of complex mechanisms to work in concert troughout the network
+  
+ 4 - QoS tools
+  There are three categories of QoS tools
+  
+  Classification and marking tools
+  Sessions, or flows are analyzed to determine what traffic class they belong to
+  Once determined , the packets are marked
+  Methods of classifying traffic flows at Layer 2 and 3 include using interfaces, ACLs, and class maps.
+  
+  Congestion avoidance tools
+  Traffic classes are alloted portions of network resources as definded by the QoS policy,
+  also identifies how some traffic may be selectively dropped ,delayed , or remarked to avoid congestion
+  Primary congestion avoidance tool is WRED(weighted random early detection) and is used to regulate TCP data traffic 
+  in a bandwith-efficient manner before tail drops caused by queue overflows occur.
+  
+  Congestion management tools
+  When traffic exceeds available netowrk resources , traffic is queued to await availability of resources
+  Common Cisco IOS-based congestion managment tools include CBWFQ and LLQ algorithms.
+  
+  Trafic Marking for QoS
+  ethernet -- layer 2 -- Class of Service (CoS)
+  ipv4     -- layer 3 -- IP precedence (IPP)
+  ipv4     -- layer 3 -- Differentiated Services Code Point (DSCP)
+  ipv4     -- layer 3 -- Type Of Service (ToS)
+  
+  Examples of trusted endpoints include IP phones, wireless access points, 
+  videoconferencing gateways and systems, IP conferencing stations, and more.
+  Cisco IOS QoS includes weighted random early detection (WRED) as a possible congestion avoidance solution. 
+  The WRED algorithm allows for congestion avoidance on network interfaces by providing buffer management 
+  and allowing TCP traffic to decrease, or throttle back, before buffers are exhausted.
+  
+  Traffic shaping retains excess packets in a queue and then schedules the excess for later transmission over increments of time. 
+  The result of traffic shaping is a smoothed packet output rate
+  Policing is commonly implemented by service providers to enforce a contracted customer information rate
+  
+  
+  
+  
+  
+  
+  
+  

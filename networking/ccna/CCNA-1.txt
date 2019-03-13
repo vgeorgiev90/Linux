@@ -1,0 +1,776 @@
+I. Explore the network
+
+  Networks come in all sizes. They can range from simple networks consisting of two computers to networks connecting millions of devices.
+  Clients are computers with software installed that enable them to request and display the information obtained from the server.
+  Client and server software usually runs on separate computers, but it is also possible for one computer to carry out both roles at the same time. 
+  In small businesses and homes, many computers function as the servers and clients on the network. This type of network is called a peer-to-peer network. 
+  
+  Communication across a network is carried on a medium. The medium provides the channel over which the message travels from source to destination. 
+  Metallic wires within cables - data is encoded into electrical impulses
+  Glass or plastic fibers (fiber optic cable) - data is encoded as pulses of light
+  Wireless transmission - data is encoded using wavelengths from the electromagnetic spectrum
+  
+  Types of Networks
+  Local Area Network (LAN) - A network infrastructure that provides access to users and end devices in a small geographical area, 
+   which is typically an enterprise, home, or small business network owned and managed by an individual or IT department. 
+  Wide Area Network (WAN) - A network infrastructure that provides access to other networks over a wide geographical area, 
+   which is typically owned and managed by a telecommunications service provider.
+  Metropolitan Area Network (MAN) - A network infrastructure that spans a physical area larger than a LAN but smaller than a WAN (e.g., a city). 
+   MANs are typically operated by a single entity such as a large organization.
+  Wireless LAN (WLAN) - Similar to a LAN but wirelessly interconnects users and end points in a small geographical area.
+  Storage Area Network (SAN) - A network infrastructure designed to support file servers and provide data storage, retrieval, and replication.
+  
+  Intranets and Extranets
+  Intranet - Company only
+  Extranet - Suppliers, Customers, Collaborators
+  Internet - World
+  
+  Home users, teleworkers (remote workers), and small offices typically require a connection to an Internet Service Provider (ISP) to access the Internet. 
+  Connection options vary greatly between ISP and geographical location. 
+  However, popular choices include broadband cable, broadband digital subscriber line (DSL), wireless WANs, and mobile services.
+  
+  Internet connections
+  
+  Home and Small Office Internet Connections
+  Cable - Typically offered by cable television service providers, the Internet data signal is carried on the same cable that delivers cable television. 
+   It provides a high bandwidth, always on, connection to the Internet. 
+  DSL - Digital Subscriber Lines provide a high bandwidth, always on, connection to the Internet. DSL runs over a telephone line. 
+   In general, small office and home office users connect using Asymmetrical DSL (ADSL), which means that the download speed is faster than the upload speed.
+  Cellular - Cellular Internet access uses a cell phone network to connect. Wherever you can get a cellular signal, you can get cellular Internet access. 
+   Performance will be limited by the capabilities of the phone and the cell tower to which it is connected. 
+  Satellite - The availability of satellite Internet access is a real benefit in those areas that would otherwise have no Internet connectivity at all.
+   Satellite dishes require a clear line of sight to the satellite.
+  Dial-up Telephone - An inexpensive option that uses any phone line and a modem. 
+   The low bandwidth provided by a dial-up modem connection is usually not sufficient for large data transfer, although it is useful for mobile access while traveling.
+  
+  Businesses Internet Connections
+  Dedicated Leased Line - Leased lines are actually reserved circuits within the service provider’s network that connect geographically separated offices for private voice and/or data networking. 
+   The circuits are typically rented at a monthly or yearly rate. They can be expensive.
+  Ethernet WAN - Ethernet WANs extend LAN access technology into the WAN. Ethernet is a LAN technology you will learn about in a later chapter. 
+   The benefits of Ethernet are now being extended into the WAN. 
+  DSL - Business DSL is available in various formats. 
+   A popular choice is Symmetric Digital Subscriber Lines (SDSL) which is similar to the consumer version of DSL, but provides uploads and downloads at the same speeds.  
+  Satellite - Similar to small office and home office users, satellite service can provide a connection when a wired solution is not available. 
+  
+  Today, the separate data, telephone, and video networks are converging. 
+  Unlike dedicated networks, converged networks are capable of delivering data, voice, and video between many different types of devices over the same network infrastructure, as shown in the figure. 
+  As networks evolve, we are discovering that there are four basic characteristics that the underlying architectures need to address in order to meet user expectations: 
+  Fault Tolerance 
+  Scalability
+  Quality of Service (QoS) 
+  Security
+  
+  
+II. Configure a Network Operating System
+
+  The Cisco Internetwork Operating System (IOS) is a generic term for the collection of network operating systems used by Cisco networking devices. 
+  Cisco IOS is used for most Cisco devices, regardless of the type or size.
+  
+ 1 - Primary Command Modes
+  User EXEC Mode - This mode has limited capabilities but is useful for basic operations. 
+   It allows only a limited number of basic monitoring commands but does not allow the execution of any commands that might change the configuration of the device. 
+   The user EXEC mode is identified by the CLI prompt that ends with the > symbol.
+  Privileged EXEC Mode - To execute configuration commands, a network administrator must access privileged EXEC mode. 
+   Higher configuration modes, like global configuration mode, can only be reached from privileged EXEC mode. 
+   The privileged EXEC mode can be identified by the prompt ending with the # symbol.
+  Global config mode - To configure the device, the user must enter Global Configuration Mode, which is commonly called global config mode. 
+   Global configuration mode is identified by a prompt that ends with (config)# after the device name, such as Switch(config)#.
+  
+  Two common sub-configuration modes include:
+   Line Configuration Mode - Used to configure console, SSH, Telnet, or AUX access.
+    For example, the default prompt for line configuration mode is Switch(config-line)#
+   Interface Configuration Mode - Used to configure a switch port or router network interface.
+    Default prompt for interface configuration mode is Switch(config-if)#.
+   
+ 2 - Secure Device Access
+  Securing Administrative access
+   Secure privileged EXEC access with password
+   Secure user EXEC access with password
+   Secure remote Telnet/SSH access with password
+
+  Other tasks
+   Encrypt all passwords if there are any in plain text
+   Change banners
+
+  Configure Passwords
+  Priv Exec mode (from config mode)
+  S1(config)# enable secret PASSWORD
+  S1(config)# end
+
+  User Exec mode (from config mode)  
+  S1(config)# line console 0
+  S1(config-line)# password PASSWORD
+  S1(config-line)# login
+  S1(config-line)# end
+  
+  VTY (telnet/ssh) access
+  S1(config)# line vty 0 15
+  S1(config-line)# password PASSWORD
+  S1(config-line)# login
+  S1(config-line)# end
+	
+ 3 - Save configuration files
+  There are two system files that store the device configuration:
+  startup-config - The file stored in Non-volatile Random Access Memory (NVRAM) that contains all of the commands that will be used by the device upon startup 
+   or reboot. NVRAM does not lose its contents when the device is powered off.
+  running-config - The file stored in Random Access Memory (RAM) that reflects the current configuration. 
+   Modifying a running configuration affects the operation of a Cisco device immediately. 
+   RAM is volatile memory. It loses all of its content when the device is powered off or restarted.   
+  
+ 4 - Interfaces and Ports
+  A cable connecting to the interface must be designed to match the physical standards of the interface. 
+  Types of network media include twisted-pair copper cables, fiber-optic cables, coaxial cables, or wireless 
+  Some of the differences between various types of media include:
+  Distance the media can successfully carry a signal
+  Environment in which the media is to be installed
+  Amount of data and the speed at which it must be transmitted
+  Cost of the media and installation
+  
+  Ethernet is the most common local area network (LAN) technology used today. 
+  Ethernet ports are found on end-user devices, switch devices, and other networking devices that can physically connect to the network using a cable. 
+  
+  Cisco IOS Layer 2 switches have physical ports for devices to connect. 
+  These ports do not support Layer 3 IP addresses. Therefore, switches have one or more switch virtual interfaces (SVIs).
+  The virtual interface provides a means to remotely manage a switch over a network using IPv4. 
+  Each switch comes with one SVI appearing in the default configuration "out-of-the-box." The default SVI is interface VLAN1.
+  
+  Switch Virtual Interface Configuration (from global config)
+  interface vlan 1
+  ip address IP NETMASK
+  no shutdown
+  
+  Commands:
+  enable                                                     # privileged exec mode
+  configure terminal                                         # global config mode 
+  interface FastEthernet 0/1                                 # interface managment mode
+  hostname NAME                                              # device hostname
+  service password-encryption                                # global conf command provide encryption for plain pass
+  banner motd # the message of the day #                      
+  copy running-config startup-config                         # Save config file after changes
+  show ip interface brief                                    # show interface status and address if any
+  
+  
+III. Network Protocols and Communications
+   
+ 1 - Communication Fundamentals
+  An identified sender and receiver
+  Common language and grammar
+  Speed and timing of delivery
+  Confirmation or acknowledgment requirements 
+  
+  Message Encoding
+  One of the first steps to sending a message is encoding. Encoding is the process of converting information into another acceptable form, for transmission. 
+  Decoding reverses this process in order to interpret the information. 
+  
+  Message Formatting and Encapsulation
+  When a message is sent from source to destination, it must use a specific format or structure. 
+  Message formats depend on the type of message and the channel that is used to deliver the message.
+  
+  Message Size
+  The size restrictions of frames require the source host to break a long message into 
+  individual pieces that meet both the minimum and maximum size requirements.
+  
+  Message Delivery Options
+  Unicast - one-to-one delivery option
+  Multicast - one-to-many delivery option
+  Broadcast - one-to-all message delivery option
+  
+ 2 - Network Protocols
+  Networking protocols define a common format and set of rules for exchanging messages between devices. 
+  Some common networking protocols are Hypertext Transfer Protocol (HTTP), Transmission Control Protocol (TCP), and Internet Protocol (IP). 
+  
+  Example
+  Communication between a web server and web client is an example of an interaction between several protocols.
+  HTTP - is an application protocol that governs the way a web server and a web client interact. 
+   HTTP defines the content and formatting of the requests and responses that are exchanged between the client and server. 
+   Both the client and the web server software implement HTTP as part of the application. 
+   HTTP relies on other protocols to govern how the messages are transported between the client and server.
+  TCP - is the transport protocol that manages the individual conversations. 
+   TCP divides the HTTP messages into smaller pieces, called segments. 
+   These segments are sent between the web server and client processes running at the destination host. 
+   TCP is also responsible for controlling the size and rate at which messages are exchanged between the server and the client.
+  IP - is responsible for taking the formatted segments from TCP, encapsulating them into packets, assigning them the appropriate addresses, 
+   and delivering them to the destination host.
+  Ethernet - is a network access protocol that describes two primary functions: communication over a data link and the physical transmission of data on the network media. 
+   Network access protocols are responsible for taking the packets from IP and formatting them to be transmitted over the media.
+  
+  TCP/IP Protocol Suite and model
+  Today, the TCP/IP protocol suite includes many protocols. Some of the more popular ones are shown
+  Aplication Layer  - DNS, DHCP, BOOTP, SMTP, POP, IMAP, FTP,TFP, HTTP
+  Transport Layer - UDP,TCP
+  Internet Layer - IP, NAT, ICMP, routing protocols (OSPF, EIGRP)
+  Network access layer - ARP , PPP, Ethernet , Device drivers 
+  
+ 3 - Network standarts
+  Open standards encourage interoperability, competition, and innovation. 
+  They also guarantee that no single company’s product can monopolize the market, or have an unfair advantage over its competition.
+
+  Standards organizations are usually vendor-neutral, non-profit institutions established to develop and promote the concept of open standards.
+   Internet Society (ISOC) – Responsible for promoting the open development and evolution of Internet use throughout the world.
+   Internet Architecture Board (IAB) - Responsible for the overall management and development of Internet standards. 
+   Internet Engineering Task Force (IETF) - Develops, updates, and maintains Internet and TCP/IP technologies. 
+    This includes the process and documents for developing new protocols and updating existing protocols know as Request for Comments (RFC) documents	
+   Internet Research Task Force (IRTF) - Focused on long-term research related to Internet and TCP/IP protocols such as Anti-Spam Research Group (ASRG), 
+    Crypto Forum Research Group (CFRG), and Peer-to-Peer Research Group (P2PRG).
+   Internet Corporation for Assigned Names and Numbers (ICANN) - Based in the United States, coordinates IP address allocation, the management of domain names, 
+    and assignment of other information used TCP/IP protocols.
+   Internet Assigned Numbers Authority (IANA) - Responsible for overseeing and managing IP address allocation, domain name management, and protocol identifiers for ICANN.	
+  
+ 4 - Reference Models
+  OSI Model and TCP/IP Model Comparison
+  
+                  OSI Model                                                   TCP/IP model
+				 Aplication
+				 Presentation                                                 Aplication
+				 Session
+				 
+				 Transport                                                    Transport
+				 
+				 Network                                                      Internet
+				 
+				 Data link
+	 			                                                              Network access
+				 Physical
+  
+ 5 - Protocol Data Units (mess segments) for every layer
+  The form that a piece of data takes at any layer is called a protocol data unit (PDU). 
+  During encapsulation, each succeeding layer encapsulates the PDU that it receives from the layer above in accordance with the protocol being used.
+  
+  Aplication layer - Data
+  Transport layer  - Segment
+  Network layer    - Packet
+  Data link layer  - Frame
+  physical layer   - bits
+  
+ 6 - Network Addresses
+  Network layer source and destination addresses - Responsible for delivering the IP packet from the original source to the final destination, 
+   either on the same network or to a remote network. (layer 3 IPs)
+  Data link layer source and destination addresses – Responsible for delivering the data link frame from one network interface card (NIC)
+   to another NIC on the same network. (layer 2 MAC)
+  
+  An IP address is the network layer, or Layer 3, logical address used to deliver the IP packet from the original source to the final destination
+  The purpose of the data link address, (or layer 2 physical address) is to deliver the data link frame from one network interface 
+   to another network interface on the same network.
+  
+  
+IV. Network access
+
+  Different physical media support the transfer of bits at different rates. Data transfer is usually discussed in terms of bandwidth and throughput. 
+  Bandwidth is the capacity of a medium to carry data. Digital bandwidth measures the amount of data that can flow from one place to another in a given amount of time. 
+  Bandwidth is typically measured in kilobits per second (kb/s), megabits per second (Mb/s), or gigabits per second (Gb/s).
+  Bandwidth is sometimes thought of as the speed that bits travel, however this is not accurate. 
+  For example, in both 10Mb/s and 100Mb/s Ethernet, the bits are sent at the speed of electricity. 
+  The difference is the number of bits that are transmitted per second. 
+  
+  Throughput is the measure of the transfer of bits across the media over a given period of time. 
+  Due to a number of factors, throughput usually does not match the specified bandwidth in physical layer implementations. 
+  Many factors influence throughput, including:
+  The amount of traffic
+  The type of traffic
+  The latency created by the number of network devices encountered between source and destination
+  
+ 1 - Characteristics of Copper Cabling
+  Networks use copper media because it is inexpensive, easy to install, and has low resistance to electrical current. 
+  However, copper media is limited by distance and signal interference.
+  Data is transmitted on copper cables as electrical pulses. A detector in the network interface of a destination device must receive a signal 
+  that can be successfully decoded to match the signal sent. 
+  However, the longer the signal travels, the more it deteriorates. This is referred to as signal attenuation. 
+  For this reason, all copper media must follow strict distance limitations as specified by the guiding standards.
+  
+  The timing and voltage values of the electrical pulses are also susceptible to interference from two sources:
+  Electromagnetic interference (EMI) or radio frequency interference (RFI) - EMI and RFI signals can distort and corrupt the data signals being carried by copper media. 
+   Potential sources of EMI and RFI include radio waves and electromagnetic devices, such as fluorescent lights or electric motors.
+  Crosstalk - Crosstalk is a disturbance caused by the electric or magnetic fields of a signal on one wire to the signal in an adjacent wire. 
+   In telephone circuits, crosstalk can result in hearing part of another voice conversation from an adjacent circuit. 
+   Specifically, when an electrical current flows through a wire, it creates a small, circular magnetic field around the wire, 
+   which can be picked up by an adjacent wire.
+
+ 2 - Copper Media
+  These cables are used to interconnect nodes on a LAN and infrastructure devices such as switches, routers, and wireless access points. 
+  Each type of connection and the accompanying devices has cabling requirements stipulated by physical layer standards.
+ 
+  There are three main types of copper media used in networking:
+  Unshielded Twisted-Pair (UTP)
+   Unshielded twisted-pair (UTP) cabling is the most common networking media. 
+   UTP cabling, terminated with RJ-45 connectors, is used for interconnecting network hosts with intermediate networking devices, such as switches and routers.
+  Shielded Twisted-Pair (STP)
+   Shielded twisted-pair (STP) provides better noise protection than UTP cabling. 
+   However, compared to UTP cable, STP cable is significantly more expensive and difficult to install. Like UTP cable, STP uses an RJ-45 connector. 
+  Coaxial
+   Coaxial cable, or coax for short, gets its name from the fact that there are two conductors that share the same axis
+   coaxial cable consists of:
+   A copper conductor used to transmit the electronic signals.
+   A layer of flexible plastic insulation surrounding a copper conductor. 
+   The insulating material is surrounded in a woven copper braid, or metallic foil, that acts as the second wire in the circuit and as a shield for the inner conductor.
+   The entire cable is covered with a cable jacket to prevent minor physical damage.
+
+  Types of UTP Cable
+  Ethernet Straight-through: The most common type of networking cable. It is commonly used to interconnect a host to a switch and a switch to a router.
+  Ethernet Crossover: A cable used to interconnect similar devices. For example to connect a switch to a switch, a host to a host, or a router to a router.
+  Rollover: A Cisco proprietary cable used to connect a workstation to a router or switch console port. 
+  
+ 3 - Optic Media
+  Optical fiber cable transmits data over longer distances and at higher bandwidths than any other networking media. 
+  Unlike copper wires, fiber-optic cable can transmit signals with less attenuation and is completely immune to EMI and RFI.
+  Optical fiber is a flexible, but extremely thin, transparent strand of very pure glass, not much bigger than a human hair. 
+  Bits are encoded on the fiber as light impulses. 
+  The fiber-optic cable acts as a waveguide, or “light pipe,” to transmit light between the two ends with minimal loss of signal.
+
+  Fiber-optic cabling is now being used in four types of industry:
+  Enterprise Networks: Used for backbone cabling applications and interconnecting infrastructure devices.
+  Fiber-to-the-Home (FTTH): Used to provide always-on broadband services to homes and small businesses.  
+  Long-Haul Networks: Used by service providers to connect countries and cities.
+  Submarine Cable Networks: Used to provide reliable high-speed, high-capacity solutions capable of surviving in harsh undersea environments up to transoceanic distances.   
+
+  Types of Fiber Media
+  Single-mode fiber (SMF): Consists of a very small core and uses expensive laser technology to send a single ray of light
+   Popular in long-distance situations spanning hundreds of kilometers, such as those required in long haul telephony and cable TV applications.
+  Multimode fiber (MMF): Consists of a larger core and uses LED emitters to send light pulses. 
+   Specifically, light from an LED enters the multimode fiber at different angles,
+   Popular in LANs because they can be powered by low-cost LEDs. It provides bandwidth up to 10 Gb/s over link lengths of up to 550 meters.
+   
+ 4 - Data link layer
+  The data link layer of the OSI model (Layer 2), is responsible for:
+  Allowing the upper layers to access the media 
+  Accepting Layer 3 packets and packaging them into frames
+  Preparing network data for the physical network
+  Controlling how data is placed and received on the media
+  Exchanging frames between nodes over a physical network media, such as UTP or fiber-optic
+  Receiving and directing packets to an upper layer protocol
+  Performing error detection
+  
+  Data link sublayers
+  Logical Link Control (LLC) - This upper sublayer communicates with the network layer. 
+   It places information in the frame that identifies which network layer protocol is being used for the frame. 
+   This information allows multiple Layer 3 protocols, such as IPv4 and IPv6, to utilize the same network interface and media. 
+  Media Access Control (MAC) - This lower sublayer defines the media access processes performed by the hardware. 
+   It provides data link layer addressing and access to various network technologies.
+
+  The Carrier Sense Multiple Access/Collision Detection (CSMA/CD) process is used in half-duplex Ethernet LANs
+  If two devices transmit at the same time, a collision will occur. Both devices will detect the collision on the network, this is the collision detection (CD).
+  Carrier Sense Multiple Access/Collision Avoidance (CSMA/CA). CMSA/CA uses a method similar to CSMA/CD to detect if the media is clear. 
+  CMSA/CA also uses additional techniques. CMSA/CA does not detect collisions but attempts to avoid them by waiting before transmitting.
+
+  Frame Fields:
+  Frame start and stop indicator flags - Used to identify the beginning and end limits of the frame.
+  Addressing - Indicates the source and destination nodes on the media.
+  Type - Identifies the Layer 3 protocol in the data field.
+  Control - Identifies special flow control services such as quality of service (QoS). QoS is used to give forwarding priority to certain types of messages. 
+   Data link frames carrying voice over IP (VoIP) packets normally receive priority because they are sensitive to delay.
+  Data - Contains the frame payload (i.e., packet header, segment header, and the data).
+  Error Detection - These frame fields are used for error detection and are included after the data to form the trailer. 
+  
+  The data link layer provides addressing that is used in transporting a frame across a shared local media. Device addresses at this layer are referred to as physical addresses.
+  Unlike Layer 3 logical addresses, which are hierarchical, physical addresses do not indicate on what network the device is located. Rather, the physical address is unique to the specific device. 
+  If the device is moved to another network or subnet, it will still function with the same Layer 2 physical address. 
+
+  Data link layer protocols include: 
+  Ethernet 
+  802.11 Wireless
+  Point-to-Point Protocol (PPP) 
+  HDLC
+  Frame Relay
+  
+ 
+V. Ethernet
+  Ethernet is the most widely used LAN technology today.  
+  Ethernet operates in the data link layer and the physical layer. 
+  It is a family of networking technologies that are defined in the IEEE 802.2 and 802.3 standards.
+  Ethernet supports data bandwidths of 10mb/s to 100 000 Mb/s(100Gb/s)
+  
+ 1 - Ethernet encapsulation 
+  Ethernet relies on the two separate sublayers of the data link layer to operate, the Logical Link Control (LLC) and the MAC sublayers.
+  
+  LLC sublayer
+  The Ethernet LLC sublayer handles the communication between the upper layers and the lower layers. 
+  This is typically between the networking software and the device hardware.
+  LLC is implemented in software, and its implementation is independent of the hardware. In a computer, 
+  the LLC can be considered the driver software for the NIC.
+  
+  MAC sublayer
+  MAC is implemented by hardware, typically in the computer NIC.
+  Ethernet MAC sublayer has two primary responsibilities:
+  Data encapsulation
+   The data encapsulation process includes frame assembly before transmission, and frame disassembly upon reception of a frame.
+   Data encapsulation provides three primary functions:
+   Frame delimiting
+   Error detection
+   Addressing
+  Media access control
+   Media access control is responsible for the placement of frames on the media and the removal of frames from the media.
+	
+  The process that a source host uses to determine the destination MAC address is known as Address Resolution Protocol (ARP).	
+  Many network protocols, such as DHCP and ARP, use broadcasts.	
+  When the IPv4 broadcast packet is encapsulated in the Ethernet frame, 
+  the destination MAC address is the broadcast MAC address of FF-FF-FF-FF-FF-FF in hexadecimal	
+	
+ 2 - Switch Fundamentals
+  A Layer 2 Ethernet switch uses MAC addresses to make forwarding decisions.
+  The switch makes its forwarding decisions based only on the Layer 2 Ethernet MAC addresses.  
+  Unlike legacy Ethernet hubs that repeat bits out all ports except the incoming port, 
+  an Ethernet switch consults a MAC address table to make a forwarding decision for each frame.	
+  The MAC address table is sometimes referred to as a content addressable memory (CAM) table.	
+	
+  The switch dynamically builds the MAC address table by examining the source MAC address of the frames received 
+  on a port. The switch forwards frames by searching for a match between the destination 
+  MAC address in the frame and an entry in the MAC address table.	
+	
+ 3 - Frame Forwarding Methods on Cisco Switches
+  Switches use one of the following forwarding methods for switching data between network ports: 
+ 
+  Store-and-forward switching
+   In store-and-forward switching, when the switch receives the frame, 
+   it stores the data in buffers until the complete frame has been received.
+   In this process, the switch also performs an error check using the Cyclic Redundancy Check (CRC) trailer portion of the Ethernet frame.
+  Cut-through switching
+   The switch buffers just enough of the frame to read the destination MAC address so that it can determine to which port to forward the data.
+   The switch does not perform any error checking on the frame. 	
+   There are two variants of cut-through switching:
+    Fast-forward switching - Fast-forward switching offers the lowest level of latency. 
+	Fast-forward switching immediately forwards a packet after reading the destination address.
+    Fragment-free switching 
+    In fragment-free switching, the switch stores the first 64 bytes of the frame before forwarding. 
+	The reason fragment-free switching stores only the first 64 bytes of the frame is that most network errors and collisions occur during the first 64 bytes.
+	Fragment-free switching tries to enhance fast-forward switching by performing a small error check on the first 64 bytes 
+	of the frame to ensure that a collision has not occurred before forwarding
+
+ 4 - Memory Buffering on Switches
+  An Ethernet switch may use a buffering technique to store frames before forwarding them.
+  there are two methods of memory buffering: port-based and shared memory.
+  
+  Port-based Memory Buffering
+  In port-based memory buffering, frames are stored in queues that are linked to specific incoming and outgoing ports.
+  
+  Shared Memory Buffering 
+  Shared memory buffering deposits all frames into a common memory buffer that all the ports on the switch share.
+  
+ 5 - Duplex and Speed Settings
+  There are two types of duplex settings used for communications on an Ethernet network: half duplex and full duplex.
+  Full-duplex – Both ends of the connection can send and receive simultaneously. 
+  Half-duplex – Only one end of the connection can send at a time. 
+
+  Autonegotiation is an optional function found on most Ethernet switches and NICs. Autonegotiation enables 
+  two devices to automatically exchange information about speed and duplex capabilities.
+
+  Auto-MDIX
+  When the auto-MDIX feature is enabled, the switch detects the type of cable attached to the port, and configures the interfaces accordingly. 
+  Therefore, you can use either a crossover or a straight-through cable for connections
+
+ 6 - Introduction to ARP
+  To determine the destination MAC address, the device uses ARP. ARP provides two basic functions:
+  Resolving IPv4 addresses to MAC addresses.
+  Maintaining a table of mappings  
+
+  For each device, an ARP cache timer removes ARP entries that have not been used for a specified period of time.
+  On a Cisco router, the show ip arp command is used to display the ARP table
+  In some cases, the use of ARP can lead to a potential security risk known as ARP spoofing or ARP poisoning. 
+  This is a technique used by an attacker to reply to an ARP request for an IPv4 address belonging to another device, 
+  such as the default gateway
+
+
+Vi. Network Layer
+  The network layer, or OSI Layer 3, provides services to allow end devices to exchange data across the network.
+  To accomplish this end-to-end transport, the network layer uses four basic processes:
+  Addressing end devices
+  Encapsulation
+  Routing 
+  De-encapsulation
+  
+  There are several network layer protocols in existence.
+  Internet Protocol version 4 (IPv4)
+  Internet Protocol version 6 (IPv6)
+  
+ 1 - Characteristics of IP
+  connectionless - no connection with the destination is established before sending data packets
+  best effort - IP is unreliable because packet delivery is not guaranteed
+  media independant - operation is independent of the mediaum (copper,fiber optic,wireless) carrying the data
+  
+ 2 - IPv4 Packet Header
+  Significant fields in the IPv4 header include:
+  Version ,Differentiated Services or DiffServ (DS), Time-to-Live (TTL), Protocol , Source IPv4 Address, Destination IPv4 Address
+
+ 3 - Router Packet Forwarding Decision
+  The router looks at its routing table to determine where to forward packets.
+  The routing table of a router can store information about:
+  Directly-connected routes
+  Remote routes 
+  Default route
+
+  On a Cisco IOS router, the show ip route command can be used to display the router’s IPv4 routing table  
+  C - Identifies a directly-connected network. Directly-connected networks are automatically created when an interface is configured with an IP address and activated.
+  L - Identifies that this is a local interface. This is the IPv4 address of the interface on the router.
+  
+ 4 - Anatomy of a router
+  The CPU requires an OS to provide routing and switching functions. The Cisco Internetwork Operating System (IOS) is the system software used for most Cisco devices
+  Specifically, a Cisco router uses four types of memory:   
+  RAM - This is volatile memory used in Cisco routers to store applications, processes, and data needed to be executed by the CPU. 
+  Cisco routers use a fast type of RAM called synchronous dynamic random access memory (SDRAM)
+  ROM - This non-volatile memory is used to store crucial operational instructions and a limited IOS. Specifically, 
+  ROM is firmware embedded on an integrated circuit inside the router which can only be altered by Cisco.
+  NVRAM – This is non-volatile memory is used as the permanent storage for the startup configuration file (startup-config). 
+  Flash - This non-volatile computer memory used as permanent storage for the IOS and other system related files such as log files, voice configuration files, 
+  HTML files, backup configurations, and more. When a router is rebooted, the IOS is copied from flash into RAM. 
+ 
+  Both Cisco routers and switches load the IOS image and startup configuration file into RAM when they are booted
+  Router Bootup Process
+  1. Perform the POST and load the bootstrap program.
+  2. Locate and load the Cisco IOS software.
+  3. Locate and load the startup configuration file or enter setup mode.
+  
+ 5 - Basic switch configuration tasks
+  Configure device name
+  hostname NAME
+  Secure user exec mode
+  line console 0
+  password PASS
+  login
+  Secure remote access (telnet,ssh)
+  line vty 0 15
+  password PASS
+  login
+  Secure privliged exec mode
+  enable secret PASS
+  Secure all passwords in the config file
+  service password-encyption
+  Provide legal notice
+  banner motd delimiter message delimiter
+  Configure managment SVI
+  interface vlan 1
+  ip address IP MASK
+  ip default-gateway IP 
+  no shutdown
+  Save config
+  copy running-config startup-config  
+ 
+ 
+VII. IP Addressing
+ 
+ 1 - IPv4 Addresses
+  Each address consists of a string of 32 bits, divided into four sections called octets. 
+  Each octet contains 8 bits (or 1 byte) separated with a dot.
+ 
+ 2 - Network and Host Portions
+  Subnet mask- Used to identify the network/host portion of the IPv4 address
+  The Prefix Length
+  standart subnet masks         various lentgh subnet mask  
+  255.255.255.0 = /24           255.255.255.252 = /30
+  255.255.0.0 = /16             255.255.252.0 = /23
+  255.0.0.0 = /8                etc..
+ 
+  Network, Host, and Broadcast Addresses
+  example
+  192.168.1.0/24 - network
+  192.168.1.11/24 - host
+  192.168.1.255/24 - broadcasts
+  
+  Devices can be assigned an IP address either statically or dynamically.
+  Dynamic Host Configuration Protocol (DHCP) - used for automatic IP asignment
+
+  IPv4 has reserved the 224.0.0.0 to 239.255.255.255 addresses as a multicast range. 
+  The IPv4 multicast addresses 224.0.0.0 to 224.0.0.255 are reserved for multicasting on the local network only.
+ 
+ 3 - Public and Private IPv4 Addresses
+  Specifically, the private address blocks are: 
+  10.0.0.0 /8 or 10.0.0.0 to 10.255.255.255
+  172.16.0.0 /12 or 172.16.0.0 to 172.31.255.255
+  192.168.0.0 /16 or 192.168.0.0 to 192.168.255.255
+ 
+  Special User IPv4 Addresses
+  Loopback addresses (127.0.0.0 /8 or 127.0.0.1 to 127.255.255.254)
+  Link-Local addresses (169.254.0.0 /16 or 169.254.0.1 to 169.254.255.254)
+  TEST-NET addresses (192.0.2.0/24 or 192.0.2.0 to 192.0.2.255)
+  
+ 4 - IPv6
+  IPv6 is designed to be the successor to IPv4. IPv6 has a larger 128-bit address space, providing for 340 undecillion addresses. 
+  IPv4 and IPv6 Coexistence
+  The migration techniques can be divided into three categories:
+  Dual Stack – dual stack allows IPv4 and IPv6 to coexist on the same network segment. 
+  Dual stack devices run both IPv4 and IPv6 protocol stacks simultaneously.
+  Tunneling – tunneling is a method of transporting an IPv6 packet over an IPv4 network. 
+  The IPv6 packet is encapsulated inside an IPv4 packet, similar to other types of data. 
+  Translation – Network Address Translation 64 (NAT64) allows IPv6-enabled devices 
+  to communicate with IPv4-enabled devices using a translation technique similar to NAT for IPv4
+  
+  IPv6 address representation
+  Rule 1 – Omit Leading 0s
+  01AB can be represented as 1AB
+  Rule 2 – Omit All 0 Segments
+  2001:0DB8::ABCD:0000:0000:1234 = 2001:0DB8::ABCD::1234
+  
+  IPv6 uses the prefix length to represent the prefix portion of the address.
+  address length is 128 bits or 8 sixtentets
+  
+ 5 - IPv6 Unicast Addresses
+  Global unicast  
+  A global unicast address is similar to a public IPv4 address. These are globally unique, Internet routable addresses.
+
+  Link-local
+  Link-local addresses are used to communicate with other devices on the same local link. With IPv6, the term link refers to a subnet.
+  FE80::/10 range
+  
+  Unique local
+  Unique local addresses are used for local addressing within a site or between a limited number of sites. 
+  These addresses should not be routable in the global IPv6 and should not be translated to a global IPv6 address. 
+  Unique local addresses are in the range of FC00::/7 to FDFF::/7. 
+
+  The command to configure an IPv6 global unicast address on an interface is ipv6 address ipv6-address/prefix-length.
+  There are two ways in which a device can obtain an IPv6 global unicast address automatically:
+  Stateless Address Autoconfiguration (SLAAC) is a method that allows a device to obtain its prefix, prefix length, default gateway address, 
+  and other information from an IPv6 router without the use of a DHCPv6 server. 
+  Using SLAAC, devices rely on the local router’s ICMPv6 Router Advertisement (RA) messages to obtain the necessary information.
+
+  Stateful DHCPv6
+  SLAAC and Stateless DHCPv6
+  With this option, the RA message suggests devices use:
+  SLAAC to create its own IPv6 global unicast address.
+  The router’s link-local address, the RA’s source IPv6 address for the default gateway address.
+  A stateless DHCPv6 server to obtain other information such as a DNS server address and a domain name.
+  Stateful DHCPv6 is similar to DHCP for IPv4. A device can automatically receive its addressing information 
+  including a global unicast address, prefix length, and the addresses of DNS servers using the services of a stateful DHCPv6 server. 
+  
+
+VIII. Subneting IP networks
+  
+ 1 - Broadcast Domains
+  In an Ethernet LAN, devices use broadcasts to locate:
+  Other devices – A device uses Address Resolution Protocol (ARP) which sends Layer 2 broadcasts to a known IPv4 address 
+  on the local network to discover the associated MAC address. 
+  Services – A host typically acquires its IPv4 address configuration using the Dynamic Host Configuration Protocol (DHCP) 
+  which sends broadcasts on the local network to locate a DHCP server.
+
+  There are two considerations when planning subnets: 
+  the number of host addresses required for each network 
+  the number of individual subnets needed 
+  
+
+IX. Transport layer
+  The transport layer is responsible for establishing a temporary communication session between two applications and delivering data between them.
+  
+ 1 - Transport Layer Responsibilities
+  Tracking Individual Conversations
+  Segmenting Data and Reassembling Segments
+  Identifying the Applications 
+  
+  To pass data streams to the proper applications, the transport layer must identify the target application
+  To accomplish this, the transport layer assigns each application an identifier called a port number. 
+  
+  Transport protocols specify how to transfer messages between hosts. TCP/IP provides two transport layer protocols, 
+  Transmission Control Protocol (TCP) and User Datagram Protocol (UDP)
+
+ 2 - TCP
+  With TCP, there are three basic operations of reliability:
+  Numbering and tracking data segments transmitted to a specific host from a specific application
+  Acknowledging received data
+  Retransmitting any unacknowledged data after a certain period of time
+  
+  TCP Features
+  Establishing a Session
+  TCP is a connection-oriented protocol. A connection-oriented protocol is one that negotiates and establishes a permanent connection 
+  (or session) between source and destination
+  
+  Reliable Delivery
+  In networking terms, reliability means ensuring that each segment that the source sends arrives at the destination.
+  
+  Same-Order Delivery
+  Because networks may provide multiple routes that can have different transmission rates, data can arrive in the wrong order. 
+  By numbering and sequencing the segments, TCP can ensure that these segments are reassembled into the proper order. 
+  
+  Flow Control
+  Network hosts have limited resources, such as memory and processing power. 
+  When TCP is aware that these resources are overtaxed, it can request that the sending application reduce the rate of data flow. 
+  This is done by TCP regulating the amount of data the source transmits.
+  
+  A TCP connection is established in three steps:
+  Step 1 - The initiating client requests a client-to-server communication session with the server.
+  Step 2 - The server acknowledges the client-to-server communication session and requests a server-to-client communication session. 
+  Step 3 - The initiating client acknowledges the server-to-client communication session.
+  (3 way handshake)
+  
+  TCP connection termination.
+  Step 1 - When the client has no more data to send in the stream, it sends a segment with the FIN flag set.
+  Step 2 - The server sends an ACK to acknowledge the receipt of the FIN to terminate the session from client to server.
+  Step 3 - The server sends a FIN to the client to terminate the server-to-client session.
+  Step 4 - The client responds with an ACK to acknowledge the FIN from the server.
+  
+ 3 - UDP
+  UDP provides the basic functions for delivering data segments between the appropriate applications, with very little overhead and data checking. 
+  UDP is known as a best-effort delivery protocol. 
+  In the context of networking, best-effort delivery is referred to as unreliable because there is no acknowledgment that the data is received at the destination
+  UDP is a lightweight transport protocol that offers the same data segmentation and reassembly as TCP, but without TCP reliability and flow control.
+  UDP is a stateless protocol, meaning neither the client, nor the server, is obligated to keep track of the state of the communication session. 
+  If reliability is required when using UDP as the transport protocol, it must be handled by the application.
+
+ 4 - Port Number Groups
+  Well-known Ports (Numbers 0 to 1023)
+  Registered Ports (Numbers 1024 to 49151)
+  Dynamic or Private Ports (Numbers 49152 to 65535)
+  
+
+X. Application Layer
+ 
+ 1 - The Application Layer
+  he application layer is closest to the end users, it is the layer that provides the interface between the applications used 
+  to communicate and the underlying network over which messages are transmitted.
+  There are many application layer protocols, and new protocols are always being developed. 
+  Some of the most widely known application layer protocols include Hypertext Transfer Protocol (HTTP), File Transfer Protocol (FTP), 
+  Trivial File Transfer Protocol (TFTP), Internet Message Access Protocol (IMAP), and Domain Name System (DNS) protocol.
+  
+ 2 - The Presentation Layer
+  The presentation layer has three primary functions:
+  Formatting, or presenting, data at the source device into a compatible form for receipt by the destination device
+  Compressing data in a way that can be decompressed by the destination device
+  Encrypting data for transmission and decrypting data upon receipt
+  
+ 3 - The Session Layer
+  As the name implies, functions at the session layer create and maintain dialogs between source and destination applications. 
+  The session layer handles the exchange of information to initiate dialogs, keep them active, 
+  and to restart sessions that are disrupted or idle for a long period of time.
+  
+ 4 - Client-Server Models
+  In the client-server model, the device requesting the information is called a client 
+  and the device responding to the request is called a server.  
+  
+ 5 - Peer-to-Peer Networks
+  In the peer-to-peer (P2P) networking model, the data is accessed from a peer device without the use of a dedicated server.
+  Every connected end device (known as a peer) can function as both a server and a client.  
+  
+ 6 - Hypertext Transfer Protocol and Hypertext Markup Language
+  When a web address or uniform resource locator (URL) is typed into a web browser, the web browser establishes 
+  a connection to the web service running on the server using the HTTP protocol. 
+  URLs and Uniform Resource Identifier (URIs) are the names most people associate with web addresses.  
+  
+  HTTP is a request/response protocol. When a client, typically a web browser, sends a request to a web server, 
+  HTTP specifies the message types used for that communication. The three common message types are
+  GET - A client request for data. A client (web browser) sends the GET message to the web server to request HTML pages.
+  POST - Uploads data files to the web server such as form data.
+  PUT - Uploads resources or content to the web server such as an image. 
+ 
+ 7 - Email Protocols
+  Email supports three separate protocols for operation: Simple Mail Transfer Protocol (SMTP), Post Office Protocol (POP), and IMAP. 
+  The application layer process that sends mail uses SMTP. 
+  A client retrieves email, however, using one of the two application layer protocols: POP or IMAP.
+ 
+ 8 - DNS (Domain name system)
+ 
+ 9 - Dynamic Host Configuration Protocol
+  The Dynamic Host Configuration Protocol (DHCP) for IPv4 service automates the assignment of IPv4 addresses, 
+  subnet masks, gateways, and other IPv4 networking parameters.
+ 
+ 10 - Enable SSH on cisco device
+  config mode commands:
+  ip domain-name example.com
+  crypto key generate rsa 
+  username NAME password PASS
+  line vty 0 4
+  login local
+  transport input ssh
+  service password-encryption
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
