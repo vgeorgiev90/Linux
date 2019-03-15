@@ -51,13 +51,20 @@ Provides persistent block storage for instances, it has pluggable driver archite
 Swift - object storage
 Stores and retrives arbitrary unstructed data objects via REST api
 it is highly fault tolerant with its data replication and scale-out architecture
+components:
+  ring - represents a mapping between the names of entities stored on a disk and their physical locations
+  zones - a zone can be a single drive or a grouping of a few drives
+  accounts, containers, objects - each account and container is an individual sqllite database distributed across the cluster
+  account database contains the list of containers in that account , container db contains the list of objects stored in the container
+  partitions - collection of stored data, including account dbs and objects  
+
 
 Heat - orchestration service 
 it orchestrates multiple composite cloud applications by using either the native HOT template or the AWS CloudFormation template format
 through both an openstack native REST API and a CloudFormation compatible query api
 
 
-########### Intallation ##############
+########### Intallation of basic openstack cloud ##############
 
 #Add repository - ubuntu 16
 add-apt-repository cloud-archive:pike
@@ -702,6 +709,8 @@ pvcreate /dev/sdb && vgcreate cinder-volumes /dev/sdb
 vi /etc/lvm/lvm.conf
 filter = ["a/sdb/", "r/.*/"]
 
+chown -R cinder: /etc/cinder
+chown -R cinder: /var/lib/cinder
 
 vi /etc/cinder/cinder.conf
 
@@ -711,3 +720,388 @@ connection = mysql+pymysql://cinder:viktor123@10.0.11.160/cinder
 [default]
 transport_url = rabbit://openstack:viktor123@10.0.11.160
 auth_strategy = keystone
+my_ip = BLOCK_NODE_IP
+enable_backends = lvm
+glance_api_servers = http://10.0.11.160:9292
+
+[oslo_concurrency]
+lock_path = /var/lib/cinder/tmp
+
+[keystone_authtoken]
+auth_url = http://10.0.11.160:5000
+memcached_servers = 10.0.11.160:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = cinder
+password = cinder123
+
+[lvm]
+volume_driver = cinder.volume.drivers.lvm.LVMVolumeDriver
+volume_group = cinder-volumes
+iscsi_protocol = iscsi
+iscsi_helper = tgtadm
+
+systemctl restart cinder-volume tgt
+
+#Verify
+openstack volume service list
+
+
+##Swift installation for object storage
+#on the controller create user and give him a role
+openstack user create --domain default --password-prompt swift
+openstack role add --project service --user swift admin
+
+#Service create
+
+openstack service create --name swift --description "openstack object storage" object-store
+openstack endpoint create --region RegionOne object-store public http://10.0.11.160:8080/v1/AUTH_%\(project_id\)s
+openstack endpoint create --region RegionOne object-store internal http://10.0.11.160:8080/v1/AUTH_%\(project_id\)s
+openstack endpoint create --region RegionOne object-store admin http://10.0.11.160:8080/v1
+
+apt-get install swift swift-proxy python-swiftclient -y
+
+mkdir /etc/swift
+#for ubuntu 18 stable/rocky for ubuntu 16 stable/pike
+curl -o /etc/swift/proxy-server.conf https://git.openstack.org/cgit/openstack/swift/plain/etc/proxy-server.conf-sample?h=stable/rocky
+
+vi /etc/swift/proxy-server.conf
+
+[default]
+bind_port = 8080
+user = swift
+swift_dir = /etc/swift
+
+[pipeline:main]
+#Remove tempurl and tempauth modules and add the authtoken and keystoneauth modules
+pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk ratelimit authtoken keystoneauth copy container-quotas account-quotas slo dlo versioned_writes symlink proxy-logging proxy-server
+
+[app:proxy-server]
+use = egg:swift#proxy
+
+account_autocreate = True
+
+[filter:keystoneauth]
+use = egg:swift#keystoneauth
+operator_roles = admin,user
+
+[filter:authtoken]
+paste.filter_factory = keystonemiddleware.auth_token:filter_factory
+auth_url = http://10.0.11.160:5000
+memcached_servers = 10.0.11.160:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = swift
+password = swift123
+delay_auth_decision = True
+
+[filter:cache]
+use = egg:swift#memcache
+memcache_servers = 10.0.11.160:11211
+
+#On the object storage nodes
+apt-get install xfsprogs rsync -y
+
+#Format drives
+mkfs.xfs /dev/drive1
+mkfs.xfs /dev/drive2
+
+mkdir -p /srv/node/drive1
+mkdir -p /srv/node/drive2
+
+vi /etc/fstab
+/dev/drive1  /srv/node/drive1 xfs  noatime,nodiratime,nobarrier,logbufs=8 0 2
+/dev/drive2  /srv/node/drive2 xfs  noatime,nodiratime,nobarrier,logbufs=8 0 2
+
+mount -a
+
+vi /etc/rsyncd.conf
+
+uid = swift
+gid = swift
+log file = /var/log/rsyncd.log
+pid file = /var/run/rsyncd.pid
+address = 10.0.11.152
+
+[account]
+max connections = 2
+path = /srv/node
+read only = False
+lock file = /var/lock/account.lock
+
+[container]
+max connections = 2
+path = /srv/node
+read only = False
+lock file = /var/lock/container.lock
+
+[object]
+max connections = 2
+path = /srv/node
+read only = False
+lock file = /var/lock/object.lock
+
+vi /etc/default/rsync
+RSYNC_ENABLE = true
+
+systemctl restart rsync
+
+
+apt-get install swift swift-account swift-container swift-object -y
+
+curl -o /etc/swift/account-server.conf https://git.openstack.org/cgit/openstack/swift/plain/etc/account-server.conf-sample?h=stable/rocky
+curl -o /etc/swift/container-server.conf https://git.openstack.org/cgit/openstack/swift/plain/etc/container-server.conf-sample?h=stable/rocky
+curl -o /etc/swift/object-server.conf https://git.openstack.org/cgit/openstack/swift/plain/etc/object-server.conf-sample?h=stable/rocky
+
+vi /etc/swift/account-server.conf
+
+[default]
+bind_ip = SERVER_IP
+bind_port = 6202
+user = swift
+swift_dir = /etc/swift
+devices = /srv/node
+mount_check = True
+
+[pipeline:main]
+pipeline = healthcheck recon account-server
+
+[filter:recon]
+use = egg:swift#recon
+
+recon_cache_path = /var/cache/swift
+
+vi /etc/swift/container-server.conf
+
+[default]
+bind_ip = SERVER_IP
+bind_port = 6201
+user = swift
+swift_dir = /etc/swift
+devices = /srv/node
+mount_check = True
+
+[pipeline:main]
+pipeline = healthcheck recon container-server
+
+[filter:recon]
+use = egg:swift#recon
+
+recon_cache_path = /var/cache/swift
+
+
+vi /etc/swift/object-server.conf
+
+[default]
+bind_ip = SERVER_IP
+bind_port = 6200
+user = swift
+swift_dir = /etc/swift
+devices = /srv/node
+mount_check = True
+
+[pipeline:main]
+pipeline = healthcheck recon object-server
+
+[filter:recon]
+use = egg:swift#recon
+
+recon_cache_path = /var/cache/swift
+recon_lock_path = /var/lock
+
+chown -R swift: /srv/node
+
+##Executed on the controller
+
+cd /etc/swift
+swift-ring-builder account.builder create 10 3 1
+
+#add each node and drive to ring
+swift-ring-builder account.builder add --region 1 --zone 1 --ip OBJECT_NODE_IP --port 6202 --device DEVICE1 --weight 100
+swift-ring-builder account.builder add --region 1 --zone 1 --ip OBJECT_NODE_IP --port 6202 --device DEVICE2 --weight 100
+
+#verify the ring
+swift-ring-builder account.builder
+#rebalance the ring
+swift-ring-builder account.builder rebalance
+
+#Create base container.builder file
+swift-ring-builder container.builder create 10 3 1
+
+#as many as the devices
+swift-ring-builder container.builder add --region 1 --zone 1 --ip OBJECT_NODE_IP --port 6201 --device DEVICE --weight 100
+
+swift-ring-builder container.builder
+swift-ring-builder container.builder rebalance
+
+
+#Create object.builder file
+swift-ring-builder object.builder create 10 3 1
+
+#as many as the devices
+swift-ring-builder object.builder add --region 1 --zone 1 --ip OBJECT_NODE_IP --port 6200 --device DEVICE --weight 100
+
+swift-ring-builder object.builder
+swift-ring-builder object.builder rebalance
+
+
+#Rsync /etc/swift/*.ring.gz to all object nodes /etc/swift and change owner to swift
+
+
+#Verify swift
+
+curl -o /etc/swift/swift.conf https://git.openstack.org/cgit/openstack/swift/plain/etc/swift.conf-sample?h=stable/rocky
+
+openssl rand -hex 6
+
+vi /etc/swift/swift.conf
+[swift-hash]
+
+swift_hash_path_suffix = HASH_PATH_SUFFIX
+swift_hash_path_prefix = HASH_PATH_PREFIX
+
+[storage-policy:0]
+name = Policy-0
+default = yes
+
+##Distribute swift.conf to all object nodes /etc/swift/swift.conf 
+
+##Restart services on the controller
+systemctl restart memcached swift-proxy
+
+#Start service on object nodes
+swift-init all start
+
+##Verify
+
+#show status
+swift stat
+openstack container create container1
+echo "TEST" > testfile
+#upload
+openstack object create container1 testfile
+#list
+openstack object list container1
+#download
+openstack object save container1 testfile
+
+
+
+##Heat installation for ochestration
+#on the controller
+#Create database
+
+create database heat;
+grant all privileges on heat.* to 'heat'@'localhost' identified by 'viktor123';
+grant all privileges on heat.* to 'heat'@'%' identified by 'viktor123';
+
+#Create openstack resources
+openstack user create --domain default --password-prompt heat
+openstack role add --project service --user heat admin
+
+#Services and endpoints
+openstack service create --name heat --description "Orchestration" orchestration
+openstack service create --name heat-cfn --description "Orchestration" cloudformation
+
+openstack endpoint create --region RegionOne orchestration public http://10.0.11.160:8004/v1/%\(tenant_id\)s
+openstack endpoint create --region RegionOne orchestration internal http://10.0.11.160:8004/v1/%\(tenant_id\)s
+openstack endpoint create --region RegionOne orchestration admin http://10.0.11.160:8004/v1/%\(tenant_id\)s
+
+openstack endpoint create --region RegionOne cloudformation public http://10.0.11.160:8000/v1
+openstack endpoint create --region RegionOne cloudformation internal http://10.0.11.160:8000/v1
+openstack endpoint create --region RegionOne cloudformation admin http://10.0.11.160:8000/v1
+
+
+#Additional identity information
+
+#Create heat domain
+openstack domain create --description "Stack projects and users" heat
+
+openstack user create --domain heat --password-prompt heat_domain_admin
+openstack role add --domain heat --user-domain heat --user heat_domain_admin admin
+
+#Create the heat_stack_owner role
+openstack role create heat_stack_owner
+
+openstack role add --domain heat --user demo heat_stack_owner
+
+#Create the heat_stack_user role
+openstack role create heat_stack_user
+
+
+apt-get install heat-api heat-api-cfn heat-engine
+
+vi /etc/heat/heat.conf
+
+[database]
+connection = mysql+pymysql://heat:viktor123@10.0.11.160/heat
+
+[default]
+transport_url = rabbit://openstack:viktor123@10.0.11.160
+heat_metadata_server_url = http://10.0.11.160:5000
+heat_waitcondition_server_url = http://10.0.11.160:8000/v1/waitcondition
+stack_domain_admin = heat_domain_admin
+stack_domain_admin_password = heat123
+stack_user_domain_name = heat
+
+[keystone_authtoken]
+auth_url = http://10.0.11.160:5000
+memcached_servers = 10.0.11.160:11211
+auth_type = password
+project_domain_name = default
+user_domain_name = default
+project_name = service
+username = heat
+password = heat123
+
+
+[trustee]
+auth_type = password
+auth_url = http://10.0.11.160:5000
+username = heat
+password = heat123
+user_domain_name = default
+
+[clients_keystone]
+auth_url = http://10.0.11.160:5000
+
+[ec2authtoken]
+auth_url = http://10.0.11.160:5000
+
+
+#Init db
+su -s /bin/sh -c "heat-manage db_sync" heat
+
+systemctl restart heat-api heat-api-cfn heat-engine
+
+
+#Verify
+openstack orchestration service list
+
+
+
+######## Verify cluster #########
+
+#Create network 
+openstack network create --share --provider-physical-network provider --provider-network-type flat NAME
+
+#Create subnet
+openstack subnet create --network provider --allocation-pool start=172.16.0.0,end=172.16.0.255 --dns-nameserver 8.8.8.8 --gateway 172.16.0.1 --subnet-range 172.16.0.0/24 NAME
+
+#Create flavor(instance type)
+openstack flavor create --id 0 --vcpus 1 --ram 1GB --disk 1 m1.nano
+
+#Create key
+openstack keypair create --public-key /path/to/pub-key
+
+#Security group rules
+
+openstack security group rule create --proto icmp default
+openstack security rule create --proto tcp --dst-port 22 default
+
+#Create the instance
+openstack server create --flavor m1.nano --image IMAGE --nic net-id=NETWORK_ID --security-group default --key-name KEYNAME NAME
