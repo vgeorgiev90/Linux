@@ -1067,10 +1067,10 @@ password = heat123
 user_domain_name = default
 
 [clients_keystone]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 
 [ec2authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 
 
 #Init db
