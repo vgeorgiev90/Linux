@@ -64,6 +64,34 @@ it orchestrates multiple composite cloud applications by using either the native
 through both an openstack native REST API and a CloudFormation compatible query api
 
 
+############ Ubuntu netowrk interface setup ##################
+
+##management
+auto ens18
+iface ens18 inet static
+address 10.40.50.60
+netmask 255.255.255.0
+gateway 10.40.50.1
+metric 100
+
+##provider
+auto ens19
+iface ens19 inet manual
+up ifconfig ens19 up
+up ip link set ens19 promisc on
+down ip link set ens19 promisc off
+down ifconfig ens19 down
+
+
+##overlay
+auto ens20
+iface ens20 inet manual
+up ifconfig $IFACE 10.50.80.230 netmask 255.255.255.0 up
+up ip link set $IFACE promisc on
+down ip link set $IFACE promisc off
+down ifconfig $IFACE down
+
+
 ########### Intallation of basic openstack cloud ##############
 
 #Add repository - ubuntu 16
@@ -139,7 +167,7 @@ export OS_USERNAME=admin
 export OS_PASSWORD=viktor123
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://10.0.11.160:35357/v3
+export OS_auth_uri=http://10.0.11.160:35357/v3
 export OS_IDENTITY_API_VERSION=3
 
 #Service project
@@ -160,7 +188,7 @@ Remove admin_token_auth from:
 [pipeline:api_v3]
 
 #unset
-unset OS_AUTH_URL OS_PASSWORD
+unset OS_auth_uri OS_PASSWORD
 
 openstack --os-auth-url http://CONTROLLER:5000/v3 --os-project-domain-name Default --os-user-domain-name Default --os-project-name admin --os-username admin token issue
 openstack --os-auth-url http://CONTROLLER:5000/v3 --os-project-domain-name Default --os-user-domain-name Default --os-project-name demo --os-username demo token issue
@@ -172,7 +200,7 @@ export OS_PASSWORD=password
 export OS_PROJECT_NAME=admin
 export OS_USER_DOMAIN_NAME=Default
 export OS_PROJECT_DOMAIN_NAME=Default
-export OS_AUTH_URL=http://Controller:5000/v3
+export OS_auth_uri=http://Controller:5000/v3
 export OS_IDENTITY_API_VERSION=3
 export OS_IMAGE_API_VERSION=2
 
@@ -305,7 +333,7 @@ firewall_driver = nova.virt/firewall.NoopFirewallDrive
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -326,7 +354,7 @@ api_servers = http://10.0.11.160:9292
 lock_path = /var/lib/nova/tmp
 
 [placement]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
@@ -362,7 +390,7 @@ firewall_driver = nova.virt.firewall.NoopFirewallDriver
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -383,7 +411,7 @@ api_servers = http://10.0.11.160:9292
 lock_path = /var/lib/nova/tmp
 
 [placement]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
@@ -448,7 +476,7 @@ notify_nova_on_port_status_changes = true
 notify_nova_on_port_data_changes = true
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -458,7 +486,7 @@ username = neutron
 password = neutron123
 
 [nova]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -512,7 +540,7 @@ vi /etc/nova/nova.conf
 [neutron]
 
 url = http://10.0.11.160:9696
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -542,7 +570,7 @@ transport_url = rabbit://openstack:viktor123@10.0.11.160
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -568,7 +596,7 @@ vi /etc/nova/nova.conf
 
 [neutron]
 url = http://10.0.11.160:9696
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 auth_type = password
 project_domain_name = default
 user_domain_name = default
@@ -676,7 +704,7 @@ my_ip = 10.0.11.160
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -721,14 +749,14 @@ connection = mysql+pymysql://cinder:viktor123@10.0.11.160/cinder
 transport_url = rabbit://openstack:viktor123@10.0.11.160
 auth_strategy = keystone
 my_ip = BLOCK_NODE_IP
-enable_backends = lvm
+enabled_backends = lvm
 glance_api_servers = http://10.0.11.160:9292
 
 [oslo_concurrency]
 lock_path = /var/lib/cinder/tmp
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -789,7 +817,7 @@ operator_roles = admin,user
 
 [filter:authtoken]
 paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -990,6 +1018,25 @@ openstack object list container1
 openstack object save container1 testfile
 
 
+#Swift ACLs manage
+
+#info can be checked with
+swift post -h
+
+#http referer header can read container contents
+-r ".r:*"
+
+#can read and list container contents
+-r ".r:*,rlistings"
+
+#list of permited referer headers to read contents
+-r ".r:example.tld,r:example2.tld"
+
+#list of denied referer headers
+-r ".r:*,.r:-example.tld,.r:-example2.tld"
+
+
+
 
 ##Heat installation for ochestration
 #on the controller
@@ -1049,7 +1096,7 @@ stack_domain_admin_password = heat123
 stack_user_domain_name = heat
 
 [keystone_authtoken]
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -1061,7 +1108,7 @@ password = heat123
 
 [trustee]
 auth_type = password
-auth_url = http://10.0.11.160:5000
+auth_uri = http://10.0.11.160:5000
 username = heat
 password = heat123
 user_domain_name = default
@@ -1082,6 +1129,95 @@ systemctl restart heat-api heat-api-cfn heat-engine
 #Verify
 openstack orchestration service list
 
+
+
+##Openstack ceilometer install with gnocchi TSMDB
+
+#ceilometer
+openstack user create --domain default --password-prompt ceilometer
+openstack role add --project service --user ceilometer admin
+
+openstack service create --name ceilometer --description "Telemetry" metering
+
+#gnocchi
+openstack user create --domain default --password-prompt gnocchi
+openstack service create --name gnocchi --description "Metric Service" metric
+
+openstack endpoint create --region RegionOne metric public http://controller:8041
+openstack endpoint create --region RegionOne metric internal http://controller:8041
+openstack endpoint create --region RegionOne metric admin http://controller:8041
+
+#Install the Gnocchi packages. Alternatively, Gnocchi can be install using pip
+apt-get install gnocchi-api gnocchi-metricd python-gnocchiclient
+
+CREATE DATABASE gnocchi;
+GRANT ALL PRIVILEGES ON gnocchi.* TO 'gnocchi'@'localhost' \
+  IDENTIFIED BY 'GNOCCHI_DBPASS';
+GRANT ALL PRIVILEGES ON gnocchi.* TO 'gnocchi'@'%' \
+  IDENTIFIED BY 'GNOCCHI_DBPASS';
+  
+#Edit the /etc/gnocchi/gnocchi.conf
+[keystone_authtoken]
+auth_type = password
+auth_url = http://controller:5000/v3
+project_domain_name = Default
+user_domain_name = Default
+project_name = service
+username = gnocchi
+password = GNOCCHI_PASS
+interface = internalURL
+region_name = RegionOne
+
+[indexer]
+url = mysql+pymysql://gnocchi:GNOCCHI_DBPASS@controller/gnocchi
+
+[storage]
+coordination_url = file:///var/lib/gnocchi/locks
+file_basepath = /var/lib/gnocchi
+driver = file
+
+[metricd]
+metric_processing_delay = 1
+
+gnocchi-upgrade
+service gnocchi-metricd restart
+
+#Install the ceilometer packages
+apt-get install ceilometer-agent-notification ceilometer-agent-central
+
+#Edit the /etc/ceilometer/ceilometer.conf
+[dispatcher_gnocchi]
+# filter out Gnocchi-related activity meters (Swift driver)
+filter_service_activity = False
+# default metric storage archival policy
+archive_policy = high
+
+[DEFAULT]
+transport_url = rabbit://openstack:RABBIT_PASS@controller
+
+[service_credentials]
+auth_type = password
+auth_url = http://controller:5000/v3
+project_domain_id = default
+user_domain_id = default
+project_name = service
+username = ceilometer
+password = CEILOMETER_PASS
+interface = internalURL
+region_name = RegionOne
+  
+Copy the files in folder ceilometer (event_definitions.yaml,event_pipeline.yaml, gnocchi_resources.yaml, pipeline.yaml) for the folder /etc/ceilometer/ of the installation Openstack.
+#find / -name FILE
+
+ceilometer-upgrade
+systemctl restart ceilometer-agent-central ceilometer-agent-notification
+
+##In the openrc file for gnocchi add
+export OS_AUTH_TYPE=password
+
+
+#Install additional compononets for metrics
+https://docs.openstack.org/ceilometer/rocky/install/
 
 
 ######## Verify cluster #########
