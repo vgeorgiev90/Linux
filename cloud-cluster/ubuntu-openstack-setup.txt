@@ -333,7 +333,7 @@ firewall_driver = nova.virt/firewall.NoopFirewallDrive
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_uri = http://10.0.11.160:5000
+auth_url = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -354,7 +354,7 @@ api_servers = http://10.0.11.160:9292
 lock_path = /var/lib/nova/tmp
 
 [placement]
-auth_uri = http://10.0.11.160:5000
+auth_url = http://10.0.11.160:5000
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
@@ -390,7 +390,7 @@ firewall_driver = nova.virt.firewall.NoopFirewallDriver
 auth_strategy = keystone
 
 [keystone_authtoken]
-auth_uri = http://10.0.11.160:5000
+auth_url = http://10.0.11.160:5000
 memcached_servers = 10.0.11.160:11211
 auth_type = password
 project_domain_name = default
@@ -411,7 +411,7 @@ api_servers = http://10.0.11.160:9292
 lock_path = /var/lib/nova/tmp
 
 [placement]
-auth_uri = http://10.0.11.160:5000
+auth_url = http://10.0.11.160:5000
 os_region_name = RegionOne
 auth_type = password
 project_domain_name = default
