@@ -1,0 +1,480 @@
+====== Extend disk Ubuntu ==========
+
+Extend the disk in proxmox
+Create new partition with the newly added space
+parted /dev/vdb
+
+pvcreate /dev/vdb4
+vgextend dlex-front-vg /dev/vdb4
+lvextend /dev/dlex-front-vg/root -l +100%FREE
+
+===== Extend bare disk Ubuntu ========
+
+fdisk -l
+Disk /dev/vda: 150 GiB, 161061273600 bytes, 314572800 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x34d1f2d1
+
+Device     Boot Start       End   Sectors  Size Id Type
+/dev/vda1  *     2048 314572799 314570752  150G 83 Linux
+
+###Note the start sector
+
+##Delete old partition and any other partitions (swap)
+root@dlex-ethereum:~# fdisk /dev/vda
+
+Welcome to fdisk (util-linux 2.27.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): d
+Selected partition 1
+Partition 1 has been deleted.
+
+
+##Create new partition the same way with the same start sector
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-314572799, default 2048): 2048
+Last sector, +sectors or +size{K,M,G,T,P} (2048-314572799, default 314572799):
+
+Created a new partition 1 of type 'Linux' and of size 150 GiB.
+
+## Enable boot flag on the new partition
+Command (m for help): a
+Selected partition 1
+The bootable flag on partition 1 is enabled now.
+
+
+## Write the changes with w and then reboot
+##resize the filesystem
+
+resize2fs /dev/vda1
+
+##Add swap file
+fallocate -l 1G /swapfile
+mkswap /swapfile
+swapon /swapfile
+
+##modify /etc/fstab
+/swapfile none            swap    sw              0       0
+
+
+
+
+
+====== Ubuntu Setup Howto LXC ======
+Created Thursday 18 October 2018
+
+====== Ubuntu Setup Howto LXC ======
+Created Tuesday 03 November 2015
+
+# vim /etc/hosts
+# vim /etc/hostname
+# vim /etc/network/interfaces
+# vim /etc/mailname
+
+===== Ubuntu =====
+
+Versions:
+Nginx 	1.8
+Mysql	5.5.35
+php		5.6.15
+
+# sudo vi /etc/ssh/sshd_config 
+	PermitRootLogin yes 
+# service ssh restart
+
+# cd ; mkdir .ssh
+# vim .ssh/authorized_keys
+	add SSH Key
+
+# apt-get update
+# apt-get -y install vim dstat mc nmap sysstat rsync apt-utils snmpd nagios-nrpe-server libsys-statistics-linux-perl ntpdate htop nload logwatch vsftpd db-util watchdog chkrootkit rkhunter unhide
+# apt-get -y install nfs-kernel-server nfs-common
+# apt-get -y dist-upgrade
+
+# vim /etc/aliases
+	root: it@tradologic.com
+# newaliases 
+
+==== 3rd party Repo Setup ====
+
+# wget http://nginx.org/keys/nginx_signing.key
+# apt-key add nginx_signing.key
+# vim /etc/apt/sources.list.d/nginx.list
+	deb http://nginx.org/packages/ubuntu/ trusty nginx
+	deb-src http://nginx.org/packages/ubuntu/ trusty nginx
+## apt-add-repository ppa:ondrej/php5-5.6
+# apt-add-repository ppa:ondrej/php
+# apt-get update
+
+==== Nginx Setup ====
+
+# apt-get -y install nginx
+# mkdir /var/www
+
+migrate nginx configs from current server
+# scp -rv HOST:/etc/nginx/* /etc/nginx/.
+# rsync -az HOST:/var/www/* /var/www/.
+# nginx -t && service nginx restart
+
+==== PHP-FPM Setup ====
+
+# apt-get -y install php5-fpm php5-mysql php5-gd
+## root@ip-172-31-26-155:~# apt-get install php7.0-gd php7.0-mysql php7.0-fpm
+
+# vim /etc/php5/fpm/php.ini
+	cgi.fix_pathinfo=0
+# vim /etc/php5/cli/php.ini
+	disable_functions = exec,passthru,shell_exec,system,proc_open,popen,curl_multi_exec,parse_ini_file,show_source
+
+# vim /etc/php5/fpm/pool.d/www.conf 
+'''
+[www]
+listen = 127.0.0.1:9000
+listen.allowed_clients = 127.0.0.1
+user = nginx
+group = nginx
+pm = dynamic
+pm.max_children = 200
+pm.start_servers = 15
+pm.min_spare_servers = 5
+pm.max_spare_servers = 25
+pm.max_requests = 50
+pm.status_path = /status
+request_terminate_timeout = 30
+request_slowlog_timeout = 5
+slowlog = /var/log/php-fpm-slow.log
+;php_admin_value[sendmail_path] = /usr/sbin/sendmail -t -i -f it@tradologic.com
+php_flag[display_errors] = off
+php_admin_value[error_log] = /var/log/php-fpm-error.log
+php_admin_flag[log_errors] = on
+php_admin_value[memory_limit] = 128M
+; Set session path to a directory owned by process user
+php_value[session.save_handler] = files
+php_value[session.save_path] = /var/lib/php5/sessions
+'''
+
+
+# vim /etc/php5/fpm/pool.d/edge.conf 
+''[edge]''
+''listen = 127.0.0.1:9001''
+''listen.allowed_clients = 127.0.0.1''
+''user = nginx''
+''group = nginx''
+''pm = dynamic''
+''pm.max_children = 25''
+''pm.start_servers = 10''
+''pm.min_spare_servers = 10''
+''pm.max_spare_servers = 15''
+''pm.max_requests = 50''
+''pm.process_idle_timeout = 10s;''
+''pm.status_path = /status-edge''
+''request_terminate_timeout = 30s''
+''slowlog = /var/log/php-fpm-slow.log''
+'';php_admin_value[sendmail_path] = /usr/sbin/sendmail -t -i -f www@my.domain.com''
+''php_flag[display_errors] = off''
+''php_admin_value[error_log] = /var/log/php-fpm-error.log''
+''php_admin_flag[log_errors] = on''
+''php_admin_value[memory_limit] = 32M''
+''php_value[session.save_handler] = files''
+''php_value[session.save_path] = /var/lib/php5/sessions''
+
+# cd [[/var/lib/php5/]]
+# chown -R nginx.nginx sessions/
+
+# service php5-fpm restart
+
+==== VsFTPd ====
+
+https://help.ubuntu.com/community/vsftpd
+
+# vim /etc/passwd
+nginx:x:108:117:nginx user,,,:/var/cache/nginx:/bin/false
+
+# mkdir /etc/vsftpd/ 
+# copy virtual-users.txt to  /etc/vsftpd/
+# cd /etc/vsftpd/ && rm virtual-users.db && db_load -T -t hash -f virtual-users.txt virtual-users.db 
+
+# vim /etc/pam.d/vsftpd.virtual 
+'''
+#%PAM-1.0
+auth       required     pam_userdb.so db=/etc/vsftpd/virtual-users
+account    required     pam_userdb.so db=/etc/vsftpd/virtual-users
+session    required     pam_loginuid.so
+'''
+
+# vim /etc/vsftpd.conf 
+'''
+allow_writeable_chroot=YES
+anonymous_enable=NO
+chmod_enable=YES
+chown_uploads=YES
+chown_username=nginx
+chroot_local_user=YES
+connect_from_port_20=YES
+data_connection_timeout=120
+#dirmessage_enable=YES
+ftpd_banner=wpstage FTP service.
+ftp_username=nginx
+guest_enable=YES
+guest_username=nginx
+hide_ids=YES
+idle_session_timeout=600
+listen_port=21
+listen=YES
+local_enable=YES
+local_root=/var/www/
+local_umask=022 
+pam_service_name=vsftpd.virtual
+pasv_max_port=63333
+pasv_min_port=62222
+use_localtime=YES
+user_sub_token=$USER
+virtual_use_local_privs=YES
+write_enable=YES
+xferlog_enable=YES
+xferlog_file=/var/log/vsftpd.log
+# SSL
+#ssl_enable=YES
+#allow_anon_ssl=
+#force_local_data_ssl=YES
+#force_local_logins_ssl=YES
+#ssl_tlsv1=YES
+#ssl_sslv2=NO
+#ssl_sslv3=NO
+#rsa_cert_file=/etc/vsftpd/vsftpd.pem
+'''
+
+
+==== Mysql Setup ====
+
+# apt-get install mysql-server libmysqlclient18 php5-mysql
+# mysql_secure_installation
+
+**Export:**
+# mysqldump -p --all-databases > alldb.sql
+//Look up the documentation for mysqldump. You may want to use some of the options mentioned in comments://
+//# mysqldump -u root -p --opt --all-databases > alldb.sql//
+//# mysqldump -u root -p --all-databases --skip-lock-tables > alldb.sql//
+**Import:**
+# mysql -p < alldb.sql
+
+shell> mysqld --skip-grant-tables &
+shell> mysql_upgrade
+
+==== Mysql Upgrade Procedure ====
+
+#HOST> mysqldump -p --add-drop-table --routines --events --add-drop-table --all-databases --force > data-for-upgrade.sql
+## mysqld --skip-grant-tables & //cannot import in that mode
+# service mysql restart
+# mysql -p --execute="source data-for-upgrade.sql" --force //did not import properly
+# mysql -p < data-for-upgrade.sql
+# mysql_upgrade -p
+# mysql -p --execute="set global innodb_fast_shutdown=0"
+# mysqladmin -p shutdown
+
+shell> mysql_upgrade
+shell> mysqlcheck --repair --all-databases
+
+# echo "SET PASSWORD FOR 'debian-sys-maint'@'localhost' = PASSWORD('`sudo cat /etc/mysql/debian.cnf | grep password | head -n 1 |
+awk -F= '{ gsub(/[ \t]+/, "", $2); print $2 }'`');" | mysql -u root -p
+
+===== NTP =====
+
+# vim /etc/default/ntpdate
+NTPSERVERS="10.50.80.21 10.50.80.22"
+
+==== Other ====
+
+**Copy configs from other server**
+scp -v HOST:/root/.ssh/authorized_keys /root/.ssh/authorized_keys
+scp -rv HOST:/root/config-gen/ /root/config-gen/
+
+==== Local IP ====
+
+# vim /etc/network/interfaces
+	iface lo:1 inet static
+			address 10.50.80.30
+			netmask 255.255.255.255
+# vim /etc/rc.local 
+	ifup lo:1
+
+
+==== Monitoring ====
+
+=== snmp for Observium ===
+# mv /etc/snmp/snmpd.conf /etc/snmp/snmpd.conf.orig
+# vim /etc/snmp/snmpd.conf
+'''
+agentAddress udp:161
+rocommunity tradologic 10.0.0.0/8
+group   notConfigGroup v1           notConfigUser
+group   notConfigGroup v2c           notConfigUser
+view    systemview    included   .1
+access  notConfigGroup ""      any       noauth    exact  systemview none none
+syslocation Bulgaria Sofia Production
+syscontact it@tradologic.com
+dontLogTCPWrappersConnects yes
+'''
+
+# service snmpd restart
+
+Add host in Observium 
+
+=== nagios ===
+
+# apt-get install nagios-nrpe-server nagios-plugins-basic nagios-plugins-common nagios-plugins-standard
+
+vnedev@nbk ~ $ cd /home/vnedev/Public/proxmox
+# scp check_linux_stats.pl check_mem.pl check_diskio.sh root@HOST:/usr/lib/nagios/plugins/.
+
+# mv /etc/nagios/nrpe.cfg /etc/nagios/nrpe.cfg.orig
+# vim /etc/nagios/nrpe.cfg
+	log_facility=daemon
+	pid_file=/var/run/nagios/nrpe.pid
+	server_port=5666
+	#server_address=127.0.0.1
+	nrpe_user=nagios
+	nrpe_group=nagios
+	allowed_hosts=127.0.0.1,10.0.0.0/8
+	dont_blame_nrpe=0
+	allow_bash_command_substitution=0
+	debug=0
+	command_timeout=60
+	connection_timeout=300
+	command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+	command[check_load]=/usr/lib/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+	command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /
+	command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+	command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 450 -c 500
+	command[check_mem]=/usr/lib/nagios/plugins/check_mem.pl -u -C -w80 -c90
+	command[check_swap]= /usr/lib/nagios/plugins/check_swap -av -w 80 -c 50
+	command[check_cpu]=/usr/lib/nagios/plugins/check_linux_stats.pl -C -w 60 -c 80
+	command[check_net]=/usr/lib/nagios/plugins/check_linux_stats.pl -N -w 2000000 -c 300000000 -p eth0
+	command[check_diskio]=/usr/lib/nagios/plugins/check_diskio.sh -uw 60.00 -uc 80.00
+
+# service nagios-nrpe-server restart        
+
+Add host in Nagios 
+
+===== Re-Sync /var/www =====
+
+# rsync -az HOST:/var/www/* /var/www/.
+
+===== Checklist =====
+
+nginx
+php-fpm
+mysqld
+snmpd
+ntpdate
+nrpe
+hosts
+vsftpd
+local ip 10.50.80.30
+
+====== LoadBalancer Setup ======
+
+==== Install Services ====
+
+http://haproxy.debian.net/#?distribution=Ubuntu&release=trusty&version=1.6
+# add-apt-repository ppa:vbernat/haproxy-1.6
+https://launchpad.net/~keepalived/+archive/ubuntu/stable
+# add-apt-repository ppa:keepalived/stable
+# apt-get update
+# apt-get install haproxy keepalived
+
+https://www.digitalocean.com/community/tutorials/how-to-set-up-highly-available-haproxy-servers-with-keepalived-and-floating-ips-on-ubuntu-14-04
+https://www.paulmellors.net/ubuntu-14-04-server-haproxy-keepalived-failover/
+
+==== System settings ====
+
+=== sysctl.conf ===
+
+edit /etc/sysctl.conf add in the line
+# net.ipv4.ip_nonlocal_bind=1 ##this tell the kernel we'll be using IP's that are not defined in the interfaces file.
+run this
+# sysctl -p ##it tells the server to activate what we put in the sysctl.conf file without rebooting the server
+
+=== /etc/rsyslog.conf ===
+
+# vim /etc/rsyslog.conf
+Then find the following two lines, and uncomment them to enable UDP syslog reception.
+
+$ModLoad imudp
+$UDPServerRun 514
+$UDPServerAddress 127.0.0.1
+
+#  service rsyslog restart
+
+==== /etc/rc.local ====
+
+# NAT Local Network
+/sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+/sbin/iptables -A FORWARD -i eth0 -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+/sbin/iptables -A FORWARD -i eth1 -o eth0 -j ACCEPT
+
+//edit the keepalived conf [/etc/keepalived/keepalived.conf ] file add this into it or replace what’s there with this.  replace where it says haproxy1 with the name of your server and update the virtual_ipaddress with one that you have available, this will be the IP that moves between servers.//
+
+**Primary server's /etc/keepalived/keepalived.conf**
+
+root@lb1-pp:~# cat /etc/keepalived/keepalived.conf
+! Configuration File for keepalived
+
+global_defs {
+   notification_email {
+	 it@tradologic.com 
+   }
+   notification_email_from keepalived@lb1-pp.bgprod.tol 
+   smtp_server 10.0.8.21
+   smtp_connect_timeout 30
+   router_id LB1-PP
+}
+
+vrrp_instance VI_1 {
+	state MASTER
+	interface eth0
+	virtual_router_id 51
+	priority 100
+	advert_int 1
+
+	unicast_src_ip 10.0.8.201
+	unicast_peer {
+	   10.0.8.202
+	}
+    
+	authentication {
+		auth_type PASS
+		auth_pass haproxy
+	}
+
+	virtual_ipaddress {
+	10.0.8.200 dev eth0
+	10.50.80.1 dev eth1
+	10.50.80.16 dev eth1
+	10.50.80.26 dev eth1
+	10.50.80.27 dev eth1
+	}
+
+		  #VRRP IP excluded from VRRP
+		   #For cases with large numbers (eg 200) of IPs
+		   #on the same interface. 
+		   #The IPs are add|del as for virtual_ipaddress.
+		   virtual_ipaddress_excluded {
+			<IPADDR>/<MASK> brd <IPADDR> dev <STRING> scope <SCOPE>
+			<IPADDR>/<MASK> brd <IPADDR> dev <STRING> scope <SCOPE>
+			   ...
+		   }
+
+
+}
