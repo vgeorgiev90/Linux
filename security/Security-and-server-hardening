@@ -126,6 +126,25 @@ auditctl -w /etc/passwd -p war -k password-file
 #-k password-file : Set a filter key on a /etc/passwd file (watch).
 #You need to use password-file string or phrase while searching audit logs.
 
+## System calls audit rules
+auditctl -a action,filter -S system_call -F arch=b64 field=value -k key_name
+
+# action and filter - specify when something is logged
+# action - always or never
+# filter - which kernel rule-matching filter is applied (task, exit, user, exclude)
+# system_call - specify the system call (list located in /usr/include/asm/unistd_64.h)
+# -F : filters 
+# arch=b64 - system architecture 64bit
+# field = match events based on key values (group, ID, process ID, etc)
+## Examples:
+# log every time adjtimex or settimeofday system calls
+auditctl -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
+
+# log every time a file is written to or attributes changed by a specific group and exclude individual user.
+auditctl -a always,exit -F path=/etc/file.conf -F perm=wa -F group=my-group -F user!=viktor -k my-file-rule
+
+
+
 
 SECURE SHARED MEMORY
 Shared memory can be used in an attack against a running service, so it is always best to secure that portion of memory. 
