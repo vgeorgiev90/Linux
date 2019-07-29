@@ -1,6 +1,6 @@
 Linux Security and server hardening
 
-PSACCT AND ACCT TOOLS
+----------------PSACCT AND ACCT TOOLS-----------------------
 psacct and acct are tools to track user activities on the system. If your system is accessed by multiple users, then these tools will help you to track user access time for the system, 
 which command they are performing
 
@@ -14,7 +14,7 @@ ac user -- check per user
 sa -u   -- all the commands executed by users
 
 
-LYNIS
+-------------------LYNIS---------------------------------
 Lynis is open source auditing tool. 
 Linux/Unix administrators use it to evaluate current system security.
 
@@ -26,7 +26,7 @@ Usage:
 lynis audit system
 
 
-OSSEC HIDS
+------------------------OSSEC HIDS----------------------------
 OSSEC watches it all, actively monitoring all aspects of 
 Unix system activity with file integrity monitoring, log monitoring, rootcheck, and process monitoring. 
 
@@ -37,7 +37,7 @@ Usage:
 Ossec usage can be very complex , the product is highly configurable , read the documentation
 
 
-LINUX KERNEL SECURITY HARDENING
+---------------------LINUX KERNEL SECURITY HARDENING-------------------------
 By using system control interface, we can change the settings of the kernel. 
 You can use sysctl command or edit the “/etc/sysctl.conf” file.
 
@@ -105,7 +105,7 @@ net.core.netdev_max_backlog = 5000
 net.ipv4.tcp_window_scaling = 1
 
 
-LINUX AUDITD
+------------------------------LINUX AUDITD----------------------------------
 During startup, the rules in /etc/audit.rules are read by this daemon. 
 You can open /etc/audit.rules file and make changes such as setup audit file log location and other option. 
 The default file is good enough to get started with auditd.
@@ -144,9 +144,42 @@ auditctl -a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
 auditctl -a always,exit -F path=/etc/file.conf -F perm=wa -F group=my-group -F user!=viktor -k my-file-rule
 
 
+----------------------------------LINUX PAM-------------------------------------------
+#Account lockout policies
+#edit:
+#/etc/pam.d/password-auth
+#/etc/pam.d/system-auth
+
+#include as the second , non-commentend line in each file
+auth required pam_faillock.so preauth silent audit deny=3 unlock_time=600
+
+#lock for 600 secs after 3 failed login attempts
+
+#include as forth line in each file
+auth [default=die] pam_faillock.so authfail audit deny=3 unlock_time=600
+
+#include as first line in account section of both files
+account required pam_faillock.so
+
+#if applying lockout to the root user as well ,add the following parameter to lines 2 and 4 in both files
+even_deny_root
+
+# to exclude specific accounts add the following line above the first line where "pam_faillock.so" is referenced in both files
+auth [success=1 default=ignore] pam_succeed_if.so user in user1:user2:user3
+
+#to view number of failed logins bu a user , stored in separate file for each user under /var/run/faillock
+faillock
+# to reset lock
+faillock --user USER --reset
+
+#Create rules and enable password requirements add the following to /etc/pam.d/passwd
+password required pam_pwquality.so retry=3
+
+#Rules can be found in /etc/security/pwquality.conf
 
 
-SECURE SHARED MEMORY
+
+--------------------------------SECURE SHARED MEMORY---------------------------------------
 Shared memory can be used in an attack against a running service, so it is always best to secure that portion of memory. 
 You can do this by modifying the /etc/fstab file.
 add the following line to the bottom of that file:
@@ -157,7 +190,7 @@ tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0
 #nosuid – Do not set SUID/SGID access on this partition
 #Optional implement disk quotas
 
-PREVENT IP SPOOFING
+----------------------------PREVENT IP SPOOFING-----------------------------
 Edit the /etc/host.conf file and include the following
 # The "order" line is only used by old versions of the C library.
 ​order bind,hosts
@@ -176,34 +209,26 @@ yum install epel-release -y && yum install nethogs -y
 nethogs eth0
 
 
-#### Drop all spoofed/martians packets script
 
+-----------------------------Drop all spoofed/martians packets script----------------------------------------
 #!/bin/bash
- 
 INT_IF="eth1" # connected to internet
 SERVER_IP="202.54.10.20" # server IP
-LAN_RANGE="192.168.1.0/24" # your LAN IP range
- 
+LAN_RANGE="192.168.1.0/24" # your LAN IP range 
 # Add your spoofed IP range/IPs here
 SPOOF_IPS="0.0.0.0/8 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 224.0.0.0/3"
- 
 IPT="/sbin/iptables" # path to iptables
- 
 # default action, can be DROP or REJECT
 ACTION="DROP"
- 
 # Drop packet that claiming from our own server on WAN port
 $IPT -A INPUT -i $INT_IF -s $SERVER_IP -j $ACTION
 $IPT -A OUTPUT -o $INT_IF -s $SERVER_IP -j $ACTION
- 
 # Drop packet that claiming from our own internal LAN on WAN port
 $IPT -A INPUT -i $INT_IF -s $LAN_RANGE -j $ACTION
 $IPT -A OUTPUT -o $INT_IF -s $LAN_RANGE -j $ACTION
- 
 ## Drop all spoofed
 for ip in $SPOOF_IPS
 do
  $IPT -A INPUT -i $INT_IF -s $ip -j $ACTION
  $IPT -A OUTPUT -o $INT_IF -s $ip -j $ACTION
 done
-
