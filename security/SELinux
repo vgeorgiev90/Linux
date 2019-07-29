@@ -196,6 +196,13 @@ Example3: Restrict access to services
 semanage login -a -s user_u joe
 
 
+#map existing user to selinux user
+semanage login -a -s SE-USER Lin-User
+
+#change default mapping from unconfined_u to other
+semanage login -m -S targeted -s "user_u" -r s0 __default__
+
+
 #Selinux logs
 /var/log/audit/audit.log
 /var/log/messages
