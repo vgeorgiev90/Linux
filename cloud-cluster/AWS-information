@@ -247,3 +247,5 @@ New volume can be created from a bakcup snapshot if you want a partial backup re
 new vilume can be created and then mounted on the EC2 instance where you can copy the needed information
 
 Whole EC2 servers can be backud up by creating an AMI from them.
+
+#####
